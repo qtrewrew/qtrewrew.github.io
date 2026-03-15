@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>blackforest</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            overflow: visible !important;
+            position: static !important;
+            transform: none !important;
+        }
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 120px;
+        }
+
+        /* 导航栏 */
+        .nav {
+            background: #1e1e1e;
+            padding: 16px 24px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 22px;
+            border: 1px solid #333;
+        }
+        .nav a {
+            color: #e0e0e0;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .nav a:hover {
+            color: #ffcc55;
+        }
+
+        /* 首页艺术字样式（取消倾斜） */
+        .home-container {
+            display: none;
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px 20px;
+            gap: 20px;
+        }
+        .art-text {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: bold;
+            color: #ffcc55;
+            text-shadow: 
+                0 0 10px rgba(255, 204, 85, 0.8),
+                0 0 20px rgba(255, 204, 85, 0.6),
+                0 0 30px rgba(255, 204, 85, 0.4),
+                2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-family: "STKaiti", "KaiTi", serif;
+            letter-spacing: 0.1em;
+            /* 取消文字倾斜 */
+            transform: none;
+            background: linear-gradient(120deg, #ffcc55, #ff9933, #ffcc55);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+        /* 副标题样式（取消倾斜） */
+        .art-subtext {
+            font-size: clamp(1rem, 2.5vw, 2rem);
+            font-weight: bold;
+            color: #ffcc55;
+            text-shadow: 
+                0 0 8px rgba(255, 204, 85, 0.8),
+                0 0 15px rgba(255, 204, 85, 0.6),
+                0 0 25px rgba(255, 204, 85, 0.4),
+                1px 1px 3px rgba(0, 0, 0, 0.8);
+            font-family: "STKaiti", "KaiTi", serif;
+            letter-spacing: 0.2em;
+            /* 取消文字倾斜 */
+            transform: none;
+            background: linear-gradient(120deg, #ffcc55, #ff9933, #ffcc55);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from {
+                text-shadow: 
+                    0 0 10px rgba(255, 204, 85, 0.8),
+                    0 0 20px rgba(255, 204, 85, 0.6),
+                    0 0 30px rgba(255, 204, 85, 0.4),
+                    2px 2px 4px rgba(0, 0, 0, 0.8);
+            }
+            to {
+                text-shadow: 
+                    0 0 15px rgba(255, 204, 85, 1),
+                    0 0 25px rgba(255, 204, 85, 0.8),
+                    0 0 35px rgba(255, 204, 85, 0.6),
+                    3px 3px 6px rgba(0, 0, 0, 0.9);
+            }
+        }
+
+        /* 百科 */
+        .content {
+            display: none;
+            align-items: center;
+            background: #1a1a1a;
+            padding: 14px 20px;
+            border-radius: 8px;
+            margin-left: 200px;
+            border-left: 3px solid #ffcc55;
+        }
+        .content img {
+            margin-right: 12px;
+        }
+        .content a {
+            color: #eee;
+            text-decoration: none;
+        }
+
+        /* 图片墙 */
+        .photo-wall {
+            display: none;
+            background: #1a1a1a;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+        #photoContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            padding: 10px 0;
+        }
+        .photo-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px;
+        }
+        .photo-item {
+            position: relative;
+            width: 170px;
+            height: 210px;
+            border: 7px solid #242424;
+            background: #0d0d0d;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transform: rotate(calc(-3deg + Math.random()*6deg));
+            transition: transform 0.25s, box-shadow 0.25s;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .photo-item:hover {
+            transform: rotate(calc(-2deg + Math.random()*4deg)) scale(1.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+        }
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block !important;
+            opacity: 1 !important;
+        }
+        .replace-btn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .replace-btn:hover {
+            background: #333;
+        }
+        .add-btn {
+            padding: 9px 18px;
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .add-btn:hover {
+            background: #333;
+        }
+        .pagination {
+            margin-top: 24px;
+            text-align: center;
+        }
+        .pagination button {
+            padding: 7px 13px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            background: #252525;
+            color: #eee;
+            cursor: pointer;
+        }
+        .pagination button.active {
+            background: #ffcc55;
+            color: #111;
+        }
+        #fileInput {
+            display: none;
+        }
+        .preview-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .preview-img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        /* 音乐悬浮播放器样式 */
+        .music-player {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 300px;
+            height: 100px;
+            background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid #444;
+            z-index: 9999;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .music-top {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .music-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .music-title {
+            font-size: 14px;
+            color: #fff;
+            font-weight: 600;
+        }
+        .music-desc {
+            font-size: 12px;
+            color: #aaa;
+        }
+        .music-time {
+            font-size: 11px;
+            color: #888;
+        }
+        /* 进度条样式 */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #ffcc55;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        /* 控制按钮区域 */
+        .music-controls {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .play-pause-btns {
+            display: flex;
+            gap: 10px;
+        }
+        .volume-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .music-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #333;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .music-btn:hover {
+            background: #ffcc55;
+            color: #111;
+            transform: scale(1.1);
+        }
+        /* 音量滑块样式 */
+        .volume-slider {
+            width: 60px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ffcc55;
+            transition: all 0.2s;
+        }
+        .volume-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+    </style>
+    <!-- 引入腾讯云COS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <a onclick="showHome()">首页</a>
+        <a onclick="hideAll()">大事件</a>
+        <a onclick="hideAll()">人物</a>
+        <a onclick="showPhotoWall()">图片墙</a>
+        <a onclick="showWiki()">百科</a>
+    </div>
+
+    <!-- 首页内容区域（文字已取消倾斜） -->
+    <div class="home-container" id="homeContent">
+        <h1 class="art-text">BlackForest血族——十年之约</h1>
+        <h2 class="art-subtext">(2016—2026)</h2>
+    </div>
+
+    <div class="content" id="wikiLink">
+        <img src="./pic/blackforeast.jpg" alt="blackforest" width="50">
+        <a href="https://blackforestbc.fandom.com/zh/wiki/%E9%BB%91%E6%A3%AE%E6%9E%97%E8%A1%80%E6%97%8F(yq)_Wiki">
+            <h3>猫武士血族wiki</h3>
+        </a>
+    </div>
+
+    <div class="photo-wall" id="photoWall">
+        <button class="add-btn" onclick="triggerAdd()">➕ 添加图片</button>
+        <div id="photoContainer"></div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <div class="preview-overlay" id="previewOverlay" onclick="closePreview()">
+        <img src="" id="previewImg" class="preview-img">
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" multiple>
+
+    <!-- 音频标签 -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="./mp3/1.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 音乐悬浮播放器 -->
+    <div class="music-player">
+        <div class="music-top">
+            <div class="music-info">
+                <div class="music-title">背景音乐</div>
+                <div class="music-desc">自定义音频</div>
+            </div>
+            <div class="music-time" id="musicTime">00:00 / 00:00</div>
+        </div>
+        
+        <!-- 进度条 -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <!-- 控制按钮（播放/暂停 + 音量） -->
+        <div class="music-controls">
+            <div class="play-pause-btns">
+                <button class="music-btn" id="playBtn">▶</button>
+                <button class="music-btn" id="pauseBtn">⏸</button>
+            </div>
+            <div class="volume-controls">
+                <button class="music-btn" id="muteBtn" title="静音">🔊</button>
+                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ====================== 请替换以下4个关键信息 ======================
+        const SECRET_ID = "AKIDeLp44oLejY9wVpukMlvrc9SXhcHitpWz";       // 腾讯云API密钥管理里的SecretId
+        const SECRET_KEY = "FF1XqOktnTwBD2qVAlBPRJyPddR1Ndib";     // 新建密钥时复制的SecretKey（仅创建时可见）
+        const BUCKET = "pic-1314828337";        // 你的存储桶名（不用改）
+        const REGION = "ap-guangzhou";        // 比如 ap-shanghai/ap-guangzhou/ap-beijing
+        // =================================================================
+
+        // ====================== 共享图片链接（所有访问者可见） ======================
+        const SHARED_PHOTOS = [
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575660384-1.jpg",
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575875419-2.jpg",
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575896731-3.jpg",
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575899896-4.jpg",
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575903870-5.jpg",
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575906924-6.jpg",
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575909760-7.jpg",
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575912547-8.jpg",
+            "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575923126-9.jpg"
+        ];
+
+        // 初始化COS对象
+        const cos = new COS({
+            SecretId: SECRET_ID,
+            SecretKey: SECRET_KEY
+        });
+
+        // 音乐播放器增强逻辑（进度条 + 音量控制）
+        const audio = document.getElementById('bgMusic');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const musicTime = document.getElementById('musicTime');
+        let hasInteracted = false;
+        let isMuted = false;
+        let originalVolume = 1;
+
+        // 格式化时间（秒转分:秒）
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 更新进度条和时间显示
+        function updateProgress() {
+            if (audio.duration) {
+                const progressPercent = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = `${progressPercent}%`;
+                musicTime.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+            }
+        }
+
+        // 解决浏览器自动播放限制
+        document.addEventListener('click', () => {
+            hasInteracted = true;
+            audio.load();
+        }, { once: true });
+
+        // 播放按钮
+        playBtn.onclick = () => {
+            if (!hasInteracted) {
+                alert('请先点击页面任意位置，再播放音乐！');
+                return;
+            }
+            audio.play().catch(err => {
+                console.error('播放失败:', err);
+                alert('播放失败，请检查：\n1. mp3/1.mp3 文件是否存在\n2. 是否使用本地服务器（如Live Server）打开页面');
+            });
+        };
+
+        // 暂停按钮
+        pauseBtn.onclick = () => {
+            audio.pause();
+        };
+
+        // 静音按钮
+        muteBtn.onclick = () => {
+            isMuted = !isMuted;
+            if (isMuted) {
+                originalVolume = audio.volume;
+                audio.volume = 0;
+                volumeSlider.value = 0;
+                muteBtn.innerHTML = '🔇';
+                muteBtn.title = '取消静音';
+            } else {
+                audio.volume = originalVolume;
+                volumeSlider.value = originalVolume;
+                muteBtn.innerHTML = '🔊';
+                muteBtn.title = '静音';
+            }
+        };
+
+        // 音量滑块控制
+        volumeSlider.addEventListener('input', () => {
+            audio.volume = volumeSlider.value;
+            // 更新静音按钮状态
+            if (volumeSlider.value == 0) {
+                isMuted = true;
+                muteBtn.innerHTML = '🔇';
+                muteBtn.title = '取消静音';
+            } else {
+                isMuted = false;
+                muteBtn.innerHTML = '🔊';
+                muteBtn.title = '静音';
+                originalVolume = volumeSlider.value;
+            }
+        });
+
+        // 进度条点击跳转
+        progressContainer.addEventListener('click', (e) => {
+            const progressWidth = progressContainer.clientWidth;
+            const clickX = e.offsetX;
+            const duration = audio.duration;
+            audio.currentTime = (clickX / progressWidth) * duration;
+        });
+
+        // 实时更新进度条
+        audio.addEventListener('timeupdate', updateProgress);
+
+        // 音频加载完成后更新总时长
+        audio.addEventListener('loadedmetadata', updateProgress);
+
+        // 初始化音量
+        audio.volume = volumeSlider.value;
+
+        // 核心功能代码（图片墙）
+        const MAX_IMAGES = 100;
+        const PER_PAGE = 30;
+        let photos = [];
+        let currentPage = 1;
+        let replaceIndex = null;
+
+        const photoContainer = document.getElementById('photoContainer');
+        const pagination = document.getElementById('pagination');
+        const fileInput = document.getElementById('fileInput');
+        const previewOverlay = document.getElementById('previewOverlay');
+        const previewImg = document.getElementById('previewImg');
+        const homeContent = document.getElementById('homeContent');
+
+        // 初始化图片数据（共享+本地存储）
+        function initPhotos() {
+            // 强制使用共享图片（所有访问者都能看到）
+            photos = [...SHARED_PHOTOS];
+            // 可选：如果需要保留你本地上传的新图片，追加到共享图片后
+            const saved = localStorage.getItem('savedPhotos');
+            if (saved) {
+                const localPhotos = JSON.parse(saved);
+                // 去重（避免重复显示）
+                const newPhotos = localPhotos.filter(img => !SHARED_PHOTOS.includes(img));
+                photos = [...photos, ...newPhotos];
+            }
+            save(); // 保存到本地存储
+            render();
+            console.log("共享图片初始化完成：", photos);
+        }
+
+        // 保存图片数据到本地存储
+        function save() {
+            localStorage.setItem('savedPhotos', JSON.stringify(photos));
+        }
+
+        // 隐藏所有内容模块
+        function hideAll() {
+            homeContent.style.display = 'none';
+            document.getElementById('wikiLink').style.display = 'none';
+            document.getElementById('photoWall').style.display = 'none';
+        }
+
+        // 显示首页
+        function showHome() {
+            hideAll();
+            homeContent.style.display = 'flex';
+        }
+
+        // 显示百科模块
+        function showWiki() {
+            hideAll();
+            document.getElementById('wikiLink').style.display = 'flex';
+        }
+
+        // 显示图片墙模块并渲染内容
+        function showPhotoWall() {
+            hideAll();
+            document.getElementById('photoWall').style.display = 'block';
+            render();
+        }
+
+        // 上传图片到腾讯云COS
+        function uploadToCOS(file, callback) {
+            // 生成唯一文件名（避免重复）
+            const fileName = "upload/" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9_\.]/g, "");
+            
+            // 上传到COS
+            cos.putObject({
+                Bucket: BUCKET,
+                Region: REGION,
+                Key: fileName,
+                Body: file,
+                onProgress: (progress) => {
+                    console.log("上传进度：", (progress.percent * 100).toFixed(1) + "%");
+                }
+            }, (err, data) => {
+                if (err) {
+                    alert("上传失败：" + (err.message || 'CORS blocked or network error'));
+                    return;
+                }
+
+                // 上传成功，生成公网访问链接
+                const imgUrl = `https://${BUCKET}.cos.${REGION}.myqcloud.com/${fileName}`;
+                callback(imgUrl);
+            });
+        }
+
+        // 触发添加图片的文件选择（修改为COS上传 + 延迟渲染）
+        function triggerAdd() {
+            if (photos.length >= MAX_IMAGES) {
+                alert('最多 100 张');
+                return;
+            }
+            fileInput.onchange = null;
+            fileInput.onchange = function (e) {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    if (photos.length >= MAX_IMAGES) return;
+                    // 上传到COS
+                    uploadToCOS(file, (imgUrl) => {
+                        photos.push(imgUrl);
+                        save();
+                        // 延迟渲染，确保本地存储同步
+                        setTimeout(() => {
+                            render();
+                        }, 50);
+                        alert("图片上传成功！别人现在能看到啦～");
+                    });
+                });
+                e.target.value = '';
+            };
+            fileInput.click();
+        }
+
+        // 打开图片预览
+        function openPreview(src) {
+            previewImg.src = src;
+            previewOverlay.style.display = "flex";
+        }
+
+        // 关闭图片预览
+        function closePreview() {
+            previewOverlay.style.display = "none";
+        }
+
+        // 替换指定索引的图片（修改为COS上传 + 延迟渲染）
+        function startReplace(index) {
+            replaceIndex = index;
+            fileInput.onchange = null;
+            fileInput.onchange = function (e) {
+                const f = e.target.files[0];
+                if (!f) return;
+                // 上传新图片到COS
+                uploadToCOS(f, (imgUrl) => {
+                    photos[replaceIndex] = imgUrl;
+                    save();
+                    // 延迟渲染，确保数据同步
+                    setTimeout(() => {
+                        render();
+                    }, 50);
+                    alert("图片替换成功！");
+                });
+                e.target.value = '';
+            };
+            fileInput.click();
+        }
+
+        // 渲染图片墙和分页
+        function render() {
+            const totalPages = Math.ceil(photos.length / PER_PAGE);
+            const start = (currentPage - 1) * PER_PAGE;
+            const pageData = photos.slice(start, start + PER_PAGE);
+
+            // 清空容器（强制重置）
+            photoContainer.innerHTML = '';
+
+            // 无图片时显示提示
+            if (photos.length === 0) {
+                photoContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #999;">暂无图片</div>';
+                pagination.innerHTML = '';
+                return;
+            }
+
+            pageData.forEach((src, i) => {
+                const idx = start + i;
+                const card = document.createElement('div');
+                card.className = 'photo-card';
+                
+                const div = document.createElement('div');
+                div.className = 'photo-item';
+                
+                // 手动创建img标签，强制设置src（确保触发请求）
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = `photo-${idx}`;
+                // 强制样式，确保图片显示
+                img.style.display = 'block';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                
+                div.appendChild(img);
+                
+                // 点击预览图片
+                div.onclick = () => openPreview(src);
+                
+                // 右键删除图片
+                div.oncontextmenu = e => {
+                    e.preventDefault();
+                    if (confirm('确定删除这张图片？')) {
+                        photos.splice(idx, 1);
+                        save();
+                        render();
+                    }
+                };
+
+                // 替换按钮
+                const btn = document.createElement('button');
+                btn.className = 'replace-btn';
+                btn.innerText = '替换';
+                btn.onclick = () => startReplace(idx);
+
+                card.appendChild(div);
+                card.appendChild(btn);
+                photoContainer.appendChild(card);
+
+                // 控制台打印，确认图片标签创建（方便调试）
+                console.log(`已创建图片标签，链接：${src}`);
+            });
+
+            // 渲染分页按钮
+            pagination.innerHTML = '';
+            for (let p = 1; p <= totalPages; p++) {
+                const btn = document.createElement('button');
+                btn.textContent = p;
+                if (p === currentPage) btn.classList.add('active');
+                btn.onclick = () => {
+                    currentPage = p;
+                    render();
+                };
+                pagination.appendChild(btn);
+            }
+        }
+
+        // 初始化
+        initPhotos();
+        showHome();
+    </script>
+</body>
+</html>
