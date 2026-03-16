@@ -326,6 +326,9 @@
         #fileInput {
             display: none;
         }
+        #charFileInput {
+            display: none;
+        }
         .preview-overlay {
             display: none;
             position: fixed;
@@ -392,6 +395,26 @@
             outline: none;
             border-color: #ffcc55;
             box-shadow: 0 0 8px rgba(255,204,85,0.3);
+        }
+        .file-upload-btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+        .file-upload-btn:hover {
+            background: #333;
+            border-color: #ffcc55;
+        }
+        .file-name {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 10px;
         }
         .add-char-btn {
             background: linear-gradient(120deg, #ffcc55, #ff9933);
@@ -626,14 +649,16 @@
             <input type="text" id="charName" placeholder="请输入人物姓名">
         </div>
         <div class="form-group">
-            <label for="charAvatar">人物头像链接</label>
-            <input type="text" id="charAvatar" placeholder="请粘贴图片URL（支持网络链接/腾讯云COS链接）">
+            <label>人物头像（自动上传到腾讯云COS/cat目录）</label>
+            <div class="file-upload-btn" onclick="document.getElementById('charFileInput').click()">📷 选择头像图片</div>
+            <div class="file-name" id="charFileName">未选择文件</div>
+            <input type="file" id="charFileInput" accept="image/*" style="display: none;">
         </div>
         <div class="form-group">
             <label for="charDesc">人物简介</label>
             <textarea id="charDesc" rows="4" placeholder="请输入人物的身份、故事、性格等简介内容"></textarea>
         </div>
-        <button class="add-char-btn" onclick="addCharacter()">➕ 添加人物</button>
+        <button class="add-char-btn" onclick="uploadCharacterAvatar()">➕ 添加人物</button>
     </div>
 
     <!-- 人物卡片列表 -->
@@ -699,6 +724,8 @@
     const SECRET_KEY = "FF1XqOktnTwBD2qVAlBPRJyPddR1Ndib";
     const BUCKET = "pic-1314828337";
     const REGION = "ap-guangzhou";
+    // 人物头像存储目录
+    const CHAR_DIR = "cat/";
 
     // ====================== 共享图片链接 ======================
     const SHARED_PHOTOS = [
@@ -718,6 +745,9 @@
         SecretId: SECRET_ID,
         SecretKey: SECRET_KEY
     });
+
+    // 全局变量：存储选中的人物头像文件
+    let selectedCharFile = null;
 
     // ==================== 星光背景 ====================
     function createStars() {
@@ -911,7 +941,91 @@
         render();
     }
 
-    // ==================== 新增：人物管理功能 ====================
+    // ==================== 人物管理功能（腾讯云COS上传版） ====================
+    // 监听人物头像文件选择
+    document.getElementById('charFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            selectedCharFile = file;
+            document.getElementById('charFileName').textContent = `已选择：${file.name}`;
+        } else {
+            selectedCharFile = null;
+            document.getElementById('charFileName').textContent = '未选择文件';
+        }
+    });
+
+    // 上传人物头像到腾讯云COS cat目录
+    function uploadCharacterAvatar() {
+        // 1. 验证输入
+        const name = document.getElementById('charName').value.trim();
+        const desc = document.getElementById('charDesc').value.trim();
+        
+        if (!name) {
+            alert('请输入人物姓名！');
+            return;
+        }
+        if (!selectedCharFile) {
+            alert('请选择人物头像图片！');
+            return;
+        }
+        if (!desc) {
+            alert('请输入人物简介！');
+            return;
+        }
+
+        // 2. 构造文件名（cat/时间戳-文件名）
+        const fileName = CHAR_DIR + Date.now() + "-" + selectedCharFile.name.replace(/[^a-zA-Z0-9_\.]/g, "");
+        
+        // 3. 上传到腾讯云COS
+        cos.putObject({
+            Bucket: BUCKET,
+            Region: REGION,
+            Key: fileName,
+            Body: selectedCharFile,
+            onProgress: (progress) => {
+                console.log("头像上传进度：", (progress.percent * 100).toFixed(1) + "%");
+            }
+        }, (err, data) => {
+            if (err) {
+                alert("头像上传失败：" + (err.message || '网络错误或COS配置问题'));
+                return;
+            }
+            
+            // 4. 上传成功，获取头像URL
+            const avatarUrl = `https://${BUCKET}.cos.${REGION}.myqcloud.com/${fileName}`;
+            
+            // 5. 添加人物信息
+            addCharacter(name, avatarUrl, desc);
+        });
+    }
+
+    // 添加人物信息到本地存储
+    function addCharacter(name, avatarUrl, desc) {
+        // 获取现有人物列表
+        const characters = getCharacters();
+        
+        // 添加新人物
+        characters.push({
+            id: Date.now(), // 唯一ID
+            name: name,
+            avatar: avatarUrl,
+            desc: desc
+        });
+
+        // 保存并重新渲染
+        saveCharacters(characters);
+        renderCharacters();
+
+        // 清空表单和文件选择
+        document.getElementById('charName').value = '';
+        document.getElementById('charDesc').value = '';
+        document.getElementById('charFileInput').value = '';
+        selectedCharFile = null;
+        document.getElementById('charFileName').textContent = '未选择文件';
+
+        alert('人物添加成功！所有用户都能看到该人物信息～');
+    }
+
     // 获取人物数据（本地存储）
     function getCharacters() {
         const saved = localStorage.getItem('bf_characters');
@@ -921,49 +1035,6 @@
     // 保存人物数据
     function saveCharacters(characters) {
         localStorage.setItem('bf_characters', JSON.stringify(characters));
-    }
-
-    // 添加人物
-    function addCharacter() {
-        const name = document.getElementById('charName').value.trim();
-        const avatar = document.getElementById('charAvatar').value.trim();
-        const desc = document.getElementById('charDesc').value.trim();
-
-        // 验证输入
-        if (!name) {
-            alert('请输入人物姓名！');
-            return;
-        }
-        if (!avatar) {
-            alert('请输入人物头像链接！');
-            return;
-        }
-        if (!desc) {
-            alert('请输入人物简介！');
-            return;
-        }
-
-        // 获取现有人物列表
-        const characters = getCharacters();
-        
-        // 添加新人物
-        characters.push({
-            id: Date.now(), // 唯一ID
-            name: name,
-            avatar: avatar,
-            desc: desc
-        });
-
-        // 保存并重新渲染
-        saveCharacters(characters);
-        renderCharacters();
-
-        // 清空表单
-        document.getElementById('charName').value = '';
-        document.getElementById('charAvatar').value = '';
-        document.getElementById('charDesc').value = '';
-
-        alert('人物添加成功！');
     }
 
     // 渲染人物列表
