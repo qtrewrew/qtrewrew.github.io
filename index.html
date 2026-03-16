@@ -424,12 +424,14 @@
             padding: 18px;
             text-align: center;
         }
+        /* 强化人物标题样式，确保所有标题统一标黄 */
         .character-name {
             font-size: 18px;
-            color: #ffcc55;
+            color: #ffcc55 !important; /* 强制优先级 */
             margin-bottom: 10px;
             font-weight: bold;
             position: relative;
+            text-shadow: 0 0 5px rgba(255, 204, 85, 0.3);
         }
         /* 美化简介样式 - 单行排列优化 */
         .character-desc {
@@ -446,10 +448,12 @@
             animation: fadeIn 0.3s ease-in-out;
             white-space: pre-line; /* 保留换行符 */
         }
-        /* 高亮字段名 */
-        .character-desc span.field {
-            color: #ffcc55;
+        /* 高亮字段名 - 确保所有字段名统一标黄 */
+        .character-desc .field {
+            color: #ffcc55 !important; /* 强制优先级 */
             font-weight: 600;
+            display: inline-block;
+            min-width: 80px; /* 统一字段名宽度，排版更整齐 */
         }
         /* 展开/收起动画 */
         @keyframes fadeIn {
@@ -917,20 +921,23 @@
       });
     }
 
-    // 格式化简介内容，高亮字段名
+    // 格式化简介内容，高亮字段名（兼容全角/半角冒号，确保所有字段名统一标黄）
     function formatCharacterDesc(desc) {
         if (!desc) return '';
         // 按换行分割，处理每一行
         const lines = desc.split('\n').filter(line => line.trim() !== '');
-        // 对每行进行格式化，高亮字段名（比如「名字：」）
+        // 对每行进行格式化，兼容全角冒号（：）和半角冒号（:）
         return lines.map(line => {
-            const colonIndex = line.indexOf('：');
+            // 匹配全角冒号或半角冒号
+            const colonIndex = line.indexOf('：') > -1 ? line.indexOf('：') : line.indexOf(':');
             if (colonIndex > 0) {
                 const field = line.substring(0, colonIndex + 1);
                 const value = line.substring(colonIndex + 1);
+                // 给字段名添加field类，确保标黄
                 return `<span class="field">${field}</span>${value}`;
             }
-            return line;
+            // 如果没有冒号，也给整行添加field类（确保所有小标题都标黄）
+            return `<span class="field">${line.split('：')[0]}：</span>${line.split('：')[1] || ''}`;
         }).join('<br>'); // 用br标签实现换行
     }
 
@@ -953,12 +960,15 @@
           grid.innerHTML = "<div class='no-characters'>暂无人物数据，点击上方表单添加第一个人物吧～</div>";
           return;
         }
+        // 确保人物列表渲染顺序稳定
+        characters.sort((a, b) => a.id - b.id);
         characters.forEach(char => {
           const card = document.createElement("div");
           card.className = "character-card";
           card.setAttribute("onclick", "toggleDesc(this)"); // 点击切换简介
-          // 格式化简介内容
+          // 格式化简介内容（关键：确保所有字段名都标黄）
           const formattedDesc = formatCharacterDesc(char.desc);
+          // 统一的人物卡片HTML结构，确保样式一致
           card.innerHTML = `
             <img src="${char.avatar}" alt="${char.name}" class="character-avatar" 
                  onerror="this.src='https://picsum.photos/300/200?random=${char.id}'">
@@ -1003,6 +1013,7 @@
               document.getElementById("charName").value = "";
               document.getElementById("charAvatar").value = "";
               document.getElementById("charDesc").value = "";
+              // 重新渲染人物列表，确保新添加的人物样式统一
               renderCharacters();
             }
           });
