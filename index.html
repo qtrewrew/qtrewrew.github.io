@@ -21,11 +21,10 @@
             color: #e0e0e0;
             min-height: 100vh;
             padding: 20px;
-            padding-bottom: 120px; /* 给音乐播放器留空间 */
+            padding-bottom: 120px;
             position: relative;
         }
 
-        /* 全局渐变背景 */
         body::before {
             content: "";
             position: fixed;
@@ -37,7 +36,6 @@
             z-index: -2;
         }
 
-        /* 星光背景 */
         .stars {
             position: fixed;
             top: 0;
@@ -58,7 +56,6 @@
             100% { opacity: 1; }
         }
 
-        /* 优化后的导航栏 - 更美观+强交互 */
         .nav {
             max-width: 800px;
             margin: 0 auto 30px;
@@ -84,7 +81,6 @@
             transition: all 0.3s ease;
             overflow: hidden;
         }
-        /* 导航栏hover效果 */
         .nav a::before {
             content: "";
             position: absolute;
@@ -103,14 +99,12 @@
         .nav a:hover::before {
             left: 100%;
         }
-        /* 导航栏激活态（可选，当前页面标记） */
         .nav a.active {
             background: rgba(255,204,85,0.2);
             color: #ffcc55;
             border: 1px solid rgba(255,204,85,0.3);
         }
 
-        /* 首页艺术字样式（取消倾斜） */
         .home-container {
             display: flex;
             min-height: 60vh;
@@ -141,7 +135,6 @@
             color: transparent;
             animation: glow 3s ease-in-out infinite alternate;
         }
-        /* 副标题样式（取消倾斜） */
         .art-subtext {
             font-size: clamp(1rem, 2.5vw, 2rem);
             font-weight: bold;
@@ -177,7 +170,6 @@
             }
         }
 
-        /* 首页装饰卡片 */
         .home-card {
             max-width: 700px;
             background: rgba(30,30,30,0.6);
@@ -200,7 +192,6 @@
             color: #bbbbbb;
         }
 
-        /* 时间统计 */
         .time-box {
             margin-top: 10px;
             font-size: 14px;
@@ -211,7 +202,6 @@
             font-weight: bold;
         }
 
-        /* 百科 */
         .content {
             display: none;
             align-items: center;
@@ -232,7 +222,6 @@
             text-decoration: none;
         }
 
-        /* 图片墙 */
         .photo-wall {
             display: none;
             background: #1a1a1a;
@@ -334,7 +323,7 @@
             width: 100vw;
             height: 100vh;
             background: rgba(0,0,0,0.9);
-            z-index: 9998; /* 比音乐播放器低 */
+            z-index: 9998;
             justify-content: center;
             align-items: center;
         }
@@ -344,7 +333,6 @@
             object-fit: contain;
         }
 
-        /* 新增：人物页面样式 */
         .character-page {
             display: none;
             max-width: 1000px;
@@ -360,7 +348,6 @@
             font-size: 24px;
             text-shadow: 0 0 10px rgba(255,204,85,0.5);
         }
-        /* 添加人物表单 */
         .add-character-form {
             background: rgba(30,30,30,0.7);
             border: 1px solid #444;
@@ -408,7 +395,6 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 15px rgba(255,204,85,0.2);
         }
-        /* 人物卡片列表 */
         .characters-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -421,6 +407,7 @@
             overflow: hidden;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            cursor: pointer;
         }
         .character-card:hover {
             transform: translateY(-5px);
@@ -435,17 +422,39 @@
         }
         .character-info {
             padding: 18px;
+            text-align: center;
         }
         .character-name {
             font-size: 18px;
             color: #ffcc55;
             margin-bottom: 10px;
             font-weight: bold;
+            position: relative;
         }
+        /* 美化简介样式 - 单行排列优化 */
         .character-desc {
             font-size: 14px;
-            color: #bbbbbb;
-            line-height: 1.6;
+            color: #e0e0e0;
+            line-height: 2; /* 增大行高，让每行更清晰 */
+            display: none; /* 默认隐藏 */
+            margin: 15px 0;
+            padding: 15px 20px; /* 增加内边距 */
+            background: linear-gradient(135deg, rgba(25,25,25,0.8), rgba(15,15,15,0.8));
+            border-radius: 8px;
+            border-left: 3px solid #ffcc55;
+            text-align: left;
+            animation: fadeIn 0.3s ease-in-out;
+            white-space: pre-line; /* 保留换行符 */
+        }
+        /* 高亮字段名 */
+        .character-desc span.field {
+            color: #ffcc55;
+            font-weight: 600;
+        }
+        /* 展开/收起动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .no-characters {
             text-align: center;
@@ -454,7 +463,7 @@
             font-size: 16px;
         }
 
-        /* 音乐悬浮播放器样式 - 修复被覆盖问题 */
+        /* 修复音乐播放器样式 - 确保始终显示 */
         .music-player {
             position: fixed !important;
             bottom: 24px !important;
@@ -470,16 +479,13 @@
             padding: 12px 18px !important;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
             border: 1px solid #444 !important;
-            z-index: 9999999 !important; /* 提升到更高层级，确保不被覆盖 */
+            z-index: 9999999 !important; /* 最高层级 */
             backdrop-filter: blur(12px) !important;
             -webkit-backdrop-filter: blur(12px) !important;
             pointer-events: auto !important; 
             visibility: visible !important; 
             opacity: 1 !important; 
             transform: none !important; 
-            /* 新增：强制层级优先级 */
-            position: fixed !important;
-            float: right !important;
         }
         .music-top {
             display: flex;
@@ -496,7 +502,7 @@
         .music-title {
             font-size: 14px;
             color: #fff;
-            font-weight: 600; /* 修复原代码font-weight错误 */
+            font-weight: 600;
         }
         .music-desc {
             font-size: 12px;
@@ -506,7 +512,6 @@
             font-size: 11px;
             color: #888;
         }
-        /* 进度条样式 */
         .progress-container {
             width: 100%;
             height: 6px;
@@ -522,7 +527,6 @@
             width: 0%;
             transition: width 0.1s linear;
         }
-        /* 控制按钮区域 */
         .music-controls {
             display: flex;
             width: 100%;
@@ -557,7 +561,6 @@
             color: #111;
             transform: scale(1.1);
         }
-        /* 音量滑块样式 */
         .volume-slider {
             width: 60px;
             height: 4px;
@@ -581,15 +584,12 @@
             transform: scale(1.2);
         }
     </style>
-    <!-- 引入腾讯云COS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js"></script>
 </head>
 <body>
 
-<!-- 星光背景 -->
 <div class="stars" id="stars"></div>
 
-<!-- 优化后的导航栏 -->
 <div class="nav">
     <a onclick="showHome()" class="active" id="nav-home">首页</a>
     <a onclick="hideAll()" id="nav-events">大事件</a>
@@ -598,7 +598,6 @@
     <a onclick="showWiki()" id="nav-wiki">百科</a>
 </div>
 
-<!-- 首页内容区域 -->
 <div class="home-container" id="homeContent">
     <h1 class="art-text">BlackForest血族——十年之约</h1>
     <h2 class="art-subtext">(2016—2026)</h2>
@@ -618,11 +617,9 @@
     </div>
 </div>
 
-<!-- 新增：人物页面 -->
 <div class="character-page" id="characterPage">
     <h2 class="character-header">🗣️ BlackForest 血族人物录</h2>
     
-    <!-- 添加人物表单 -->
     <div class="add-character-form">
         <div class="form-group">
             <label for="charName">人物姓名</label>
@@ -634,16 +631,20 @@
         </div>
         <div class="form-group">
             <label for="charDesc">人物简介</label>
-            <textarea id="charDesc" rows="4" placeholder="请输入人物的身份、故事、性格等简介内容"></textarea>
+            <!-- 修改提示文字，引导按字段格式填写 -->
+            <textarea id="charDesc" rows="4" placeholder="请按以下格式填写（每行一个字段）：
+名字：银星
+当前职务：组长
+加入时间：2018.5.1
+性格：沉稳、负责
+备注：核心成员之一"></textarea>
         </div>
         <button class="add-char-btn" onclick="addCharacter()">➕ 添加人物</button>
     </div>
 
-    <!-- 人物卡片列表 -->
     <div class="characters-grid" id="charactersGrid"></div>
 </div>
 
-<!-- 百科模块 -->
 <div class="content" id="wikiLink">
     <img src="./pic/blackforeast.jpg" alt="blackforest" width="50">
     <a href="https://blackforestbc.fandom.com/zh/wiki/%E9%BB%91%E6%A3%AE%E6%9E%97%E8%A1%80%E6%97%8F(yq)_Wiki">
@@ -651,26 +652,24 @@
     </a>
 </div>
 
-<!-- 图片墙 -->
 <div class="photo-wall" id="photoWall">
     <button class="add-btn" onclick="triggerAdd()">➕ 添加图片</button>
     <div id="photoContainer"></div>
     <div class="pagination" id="pagination"></div>
 </div>
 
-<!-- 图片预览 -->
 <div class="preview-overlay" id="previewOverlay" onclick="closePreview()">
     <img src="" id="previewImg" class="preview-img">
 </div>
 
 <input type="file" id="fileInput" accept="image/*" multiple>
 
-<!-- 音频标签 - 修复：添加闭合标签 -->
+<!-- 修复：补全audio闭合标签 -->
 <audio id="bgMusic" loop preload="auto">
     <source src="./mp3/1.mp3" type="audio/mpeg">
 </audio>
 
-<!-- 音乐悬浮播放器 -->
+<!-- 音乐播放器 - 确保层级最高 -->
 <div class="music-player" id="musicPlayer">
     <div class="music-top">
         <div class="music-info">
@@ -697,13 +696,11 @@
 </div>
 
 <script>
-    // ====================== 腾讯云COS配置 ======================
     const SECRET_ID = "AKIDeLp44oLejY9wVpukMlvrc9SXhcHitpWz";
     const SECRET_KEY = "FF1XqOktnTwBD2qVAlBPRJyPddR1Ndib";
     const BUCKET = "pic-1314828337";
     const REGION = "ap-guangzhou";
 
-    // ====================== 共享图片链接 ======================
     const SHARED_PHOTOS = [
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575660384-1.jpg",
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575875419-2.jpg",
@@ -716,13 +713,11 @@
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575923126-9.jpg"
     ];
 
-    // 初始化COS对象
     const cos = new COS({
         SecretId: SECRET_ID,
         SecretKey: SECRET_KEY
     });
 
-    // ==================== 星光背景 ====================
     function createStars() {
         const stars = document.getElementById('stars');
         for (let i = 0; i < 80; i++) {
@@ -738,7 +733,6 @@
         }
     }
 
-    // ==================== 天数计算 ====================
     function calcDays() {
         const start = new Date('2016-08-06');
         const now = new Date();
@@ -746,7 +740,6 @@
         document.getElementById('dayCount').innerText = diff;
     }
 
-    // ==================== 音乐播放器逻辑 ====================
     const audio = document.getElementById('bgMusic');
     const playBtn = document.getElementById('playBtn');
     const pauseBtn = document.getElementById('pauseBtn');
@@ -760,24 +753,22 @@
     let isMuted = false;
     let originalVolume = 1;
 
-    // 修复：强制保持音乐播放器可见，优化定时器逻辑
+    // 强制保持音乐播放器可见
     function keepPlayerVisible() {
         musicPlayer.style.display = 'flex';
         musicPlayer.style.visibility = 'visible';
         musicPlayer.style.opacity = '1';
-        musicPlayer.style.zIndex = '9999999'; // 强制重置z-index
+        musicPlayer.style.zIndex = '9999999';
     }
-    setInterval(keepPlayerVisible, 500); // 缩短检测间隔
+    setInterval(keepPlayerVisible, 100); // 缩短检测间隔
     keepPlayerVisible(); // 初始化立即执行
 
-    // 格式化时间
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    // 更新进度条
     function updateProgress() {
         if (audio.duration) {
             const progressPercent = (audio.currentTime / audio.duration) * 100;
@@ -786,13 +777,11 @@
         }
     }
 
-    // 解决自动播放限制
     document.addEventListener('click', () => {
         hasInteracted = true;
         audio.load();
     }, { once: true });
 
-    // 播放/暂停/静音/音量控制
     playBtn.onclick = () => {
         if (!hasInteracted) {
             alert('请先点击页面任意位置，再播放音乐！');
@@ -836,7 +825,6 @@
         }
     });
 
-    // 进度条点击跳转
     progressContainer.addEventListener('click', (e) => {
         const progressWidth = progressContainer.clientWidth;
         const clickX = e.offsetX;
@@ -847,23 +835,19 @@
     audio.addEventListener('loadedmetadata', updateProgress);
     audio.volume = volumeSlider.value;
 
-    // ==================== 页面切换逻辑 ====================
-    // 重置导航栏激活态
     function resetNavActive() {
         document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
     }
 
-    // 隐藏所有内容模块
     function hideAll() {
         homeContent.style.display = 'none';
         document.getElementById('wikiLink').style.display = 'none';
         document.getElementById('photoWall').style.display = 'none';
         document.getElementById('characterPage').style.display = 'none';
         resetNavActive();
-        keepPlayerVisible(); // 切换页面时强制显示播放器
+        keepPlayerVisible(); // 切换页面强制显示播放器
     }
 
-    // 显示首页
     function showHome() {
         hideAll();
         homeContent.style.display = 'flex';
@@ -871,14 +855,12 @@
         calcDays();
     }
 
-    // 显示百科
     function showWiki() {
         hideAll();
         document.getElementById('wikiLink').style.display = 'flex';
         document.getElementById('nav-wiki').classList.add('active');
     }
 
-    // 显示图片墙
     function showPhotoWall() {
         hideAll();
         document.getElementById('photoWall').style.display = 'block';
@@ -886,11 +868,9 @@
         render();
     }
 
-    // ==================== 人物云存储功能 ====================
     const CHARACTER_FOLDER = "cat/";
     const CHARACTER_DATA_PATH = "data/characters.json";
 
-    // 从COS读取人物
     function loadCharactersFromCOS(callback) {
       cos.getObject({
         Bucket: BUCKET,
@@ -909,7 +889,6 @@
       });
     }
 
-    // 保存人物到COS
     function saveCharactersToCOS(characters, callback) {
       cos.putObject({
         Bucket: BUCKET,
@@ -920,7 +899,6 @@
       }, callback);
     }
 
-    // 上传头像到 cat/
     function uploadCharacterAvatar(file, callback) {
       const ext = file.name.split('.').pop();
       const fileName = CHARACTER_FOLDER + Date.now() + "-" + Math.random().toString(36).substr(2,6) + "." + ext;
@@ -939,7 +917,33 @@
       });
     }
 
-    // 渲染人物列表
+    // 格式化简介内容，高亮字段名
+    function formatCharacterDesc(desc) {
+        if (!desc) return '';
+        // 按换行分割，处理每一行
+        const lines = desc.split('\n').filter(line => line.trim() !== '');
+        // 对每行进行格式化，高亮字段名（比如「名字：」）
+        return lines.map(line => {
+            const colonIndex = line.indexOf('：');
+            if (colonIndex > 0) {
+                const field = line.substring(0, colonIndex + 1);
+                const value = line.substring(colonIndex + 1);
+                return `<span class="field">${field}</span>${value}`;
+            }
+            return line;
+        }).join('<br>'); // 用br标签实现换行
+    }
+
+    // 点击卡片展开/收起简介（优化动画）
+    function toggleDesc(card) {
+        const desc = card.querySelector('.character-desc');
+        if (desc.style.display === 'none' || desc.style.display === '') {
+            desc.style.display = 'block';
+        } else {
+            desc.style.display = 'none';
+        }
+    }
+
     function renderCharacters() {
       const grid = document.getElementById("charactersGrid");
       grid.innerHTML = "加载中...";
@@ -952,12 +956,15 @@
         characters.forEach(char => {
           const card = document.createElement("div");
           card.className = "character-card";
+          card.setAttribute("onclick", "toggleDesc(this)"); // 点击切换简介
+          // 格式化简介内容
+          const formattedDesc = formatCharacterDesc(char.desc);
           card.innerHTML = `
             <img src="${char.avatar}" alt="${char.name}" class="character-avatar" 
                  onerror="this.src='https://picsum.photos/300/200?random=${char.id}'">
             <div class="character-info">
               <div class="character-name">${char.name}</div>
-              <div class="character-desc">${char.desc}</div>
+              <div class="character-desc">${formattedDesc}</div>
               <div style="margin-top:10px;">
                 <button onclick="deleteCharacter(${char.id});event.stopPropagation();" 
                         style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
@@ -971,7 +978,6 @@
       });
     }
 
-    // 添加人物（上传头像+保存到云端）
     function addCharacter() {
       const name = document.getElementById("charName").value.trim();
       const desc = document.getElementById("charDesc").value.trim();
@@ -1004,7 +1010,6 @@
       });
     }
 
-    // 删除人物
     function deleteCharacter(characterId) {
       if (!confirm("确定删除该人物？删除后所有人都看不见！")) return;
       loadCharactersFromCOS(function(chars) {
@@ -1020,7 +1025,6 @@
       });
     }
 
-    // 显示人物页
     function showCharacters() {
         hideAll();
         document.getElementById("characterPage").style.display = "block";
@@ -1028,7 +1032,6 @@
         renderCharacters();
     }
 
-    // ==================== 图片墙逻辑 ====================
     const MAX_IMAGES = 100;
     const PER_PAGE = 30;
     let photos = [];
@@ -1042,7 +1045,6 @@
     const previewImg = document.getElementById('previewImg');
     const homeContent = document.getElementById('homeContent');
 
-    // 初始化图片数据
     function initPhotos() {
         photos = [...SHARED_PHOTOS];
         const saved = localStorage.getItem('savedPhotos');
@@ -1055,12 +1057,10 @@
         render();
     }
 
-    // 保存图片数据
     function save() {
         localStorage.setItem('savedPhotos', JSON.stringify(photos));
     }
 
-    // ==================== 图片墙操作 ====================
     function uploadToCOS(file, callback) {
         const fileName = "upload/" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9_\.]/g, "");
         
@@ -1107,7 +1107,7 @@
     function openPreview(src) {
         previewImg.src = src;
         previewOverlay.style.display = "flex";
-        keepPlayerVisible(); // 预览图片时强制显示播放器
+        keepPlayerVisible();
     }
 
     function closePreview() {
@@ -1194,7 +1194,7 @@
         }
     }
 
-    // ==================== 初始化 ====================
+    // 初始化
     createStars();
     calcDays();
     initPhotos();
