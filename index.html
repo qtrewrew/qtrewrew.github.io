@@ -950,7 +950,7 @@
         render();
     }
 
-    // ====================== 人物管理（核心） ======================
+    // ====================== 人物管理（核心修复） ======================
     const CHARACTER_FOLDER = "cat/";
     const CHARACTER_DATA_PATH = "data/characters.json";
 
@@ -1018,8 +1018,11 @@
         }).join('<br>');
     }
 
-    // 进入编辑模式（核心修改）
+    // 进入编辑模式（核心修复：增加编辑状态判断，避免重复触发）
     function enterEditMode(charId) {
+        // 如果已经在编辑当前人物，直接返回
+        if (editingCharId === charId) return;
+        
         editingCharId = charId;
         tempAvatarFile = null;
         
@@ -1034,14 +1037,14 @@
             // 获取人物信息区域
             const infoArea = card.querySelector('.character-info');
             
-            // 构建编辑表单HTML
+            // 构建编辑表单HTML（修复：给输入框添加阻止冒泡）
             const editHtml = `
-                <input type="text" class="edit-input" id="editName_${charId}" value="${char.name}" placeholder="人物姓名">
-                <button class="edit-avatar-btn" onclick="selectNewAvatar(${charId})">更换头像</button>
-                <textarea class="edit-textarea" id="editDesc_${charId}" placeholder="人物简介">${char.desc}</textarea>
+                <input type="text" class="edit-input" id="editName_${charId}" value="${char.name}" placeholder="人物姓名" onclick="event.stopPropagation()">
+                <button class="edit-avatar-btn" onclick="selectNewAvatar(${charId});event.stopPropagation();">更换头像</button>
+                <textarea class="edit-textarea" id="editDesc_${charId}" placeholder="人物简介" onclick="event.stopPropagation()">${char.desc}</textarea>
                 <div style="display:flex; justify-content:center; gap:8px; margin-top:10px;">
-                    <button class="save-edit-btn" onclick="saveInlineEdit(${charId})">保存修改</button>
-                    <button class="cancel-edit-btn-sm" onclick="cancelEditMode(${charId})">取消</button>
+                    <button class="save-edit-btn" onclick="saveInlineEdit(${charId});event.stopPropagation();">保存修改</button>
+                    <button class="cancel-edit-btn-sm" onclick="cancelEditMode(${charId});event.stopPropagation();">取消</button>
                     <button onclick="deleteCharacter(${charId});event.stopPropagation();" 
                             style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
                       删除
@@ -1067,7 +1070,7 @@
         fileInput.click();
     }
 
-    // 保存行内编辑（核心修改）
+    // 保存行内编辑
     function saveInlineEdit(charId) {
         const newName = document.getElementById(`editName_${charId}`).value.trim();
         const newDesc = document.getElementById(`editDesc_${charId}`).value.trim();
@@ -1130,7 +1133,7 @@
         renderCharacters(); // 重新渲染恢复原样
     }
 
-    // 渲染人物列表（核心修改）
+    // 渲染人物列表（核心修复：移除卡片的onclick属性，改用事件委托）
     function renderCharacters() {
       const grid = document.getElementById("charactersGrid");
       grid.innerHTML = "加载中...";
@@ -1147,7 +1150,7 @@
           const card = document.createElement("div");
           card.className = "character-card";
           card.setAttribute("data-char-id", char.id); // 标记人物ID
-          card.setAttribute("onclick", "enterEditMode(" + char.id + ")"); // 点击卡片进入编辑
+          // 移除：card.setAttribute("onclick", "enterEditMode(" + char.id + ")");
           
           const formattedDesc = formatCharacterDesc(char.desc);
           
@@ -1165,10 +1168,19 @@
           
           grid.appendChild(card);
         });
+        
+        // 事件委托：给整个grid添加点击事件，判断是否点击了卡片
+        grid.addEventListener('click', function(e) {
+            const card = e.target.closest('.character-card');
+            if (card && !e.target.closest('.edit-input, .edit-textarea, button')) {
+                const charId = parseInt(card.getAttribute('data-char-id'));
+                enterEditMode(charId);
+            }
+        });
       });
     }
 
-    // 添加新人物（保持原有逻辑）
+    // 添加新人物
     function addCharacter() {
       const name = document.getElementById("charName").value.trim();
       const desc = document.getElementById("charDesc").value.trim();
@@ -1199,7 +1211,7 @@
       });
     }
 
-    // 清空表单（保持原有逻辑）
+    // 清空表单
     function clearForm() {
         document.getElementById("charName").value = "";
         document.getElementById("charAvatar").value = "";
@@ -1211,7 +1223,7 @@
         addCharacter();
     }
 
-    // 删除人物（保持原有逻辑）
+    // 删除人物
     function deleteCharacter(characterId) {
       if (!confirm("确定删除该人物？删除后所有人都看不见！")) return;
       
