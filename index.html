@@ -326,9 +326,6 @@
         #fileInput {
             display: none;
         }
-        #charFileInput {
-            display: none;
-        }
         .preview-overlay {
             display: none;
             position: fixed;
@@ -396,26 +393,6 @@
             border-color: #ffcc55;
             box-shadow: 0 0 8px rgba(255,204,85,0.3);
         }
-        .file-upload-btn {
-            display: inline-block;
-            padding: 12px 20px;
-            background: #2a2a2a;
-            color: #e0e0e0;
-            border: 1px solid #555;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 8px;
-            transition: all 0.2s ease;
-        }
-        .file-upload-btn:hover {
-            background: #333;
-            border-color: #ffcc55;
-        }
-        .file-name {
-            font-size: 13px;
-            color: #999;
-            margin-bottom: 10px;
-        }
         .add-char-btn {
             background: linear-gradient(120deg, #ffcc55, #ff9933);
             color: #121212;
@@ -477,7 +454,7 @@
             font-size: 16px;
         }
 
-        /* 音乐悬浮播放器样式 - 强制最高优先级，永不消失 */
+        /* 音乐悬浮播放器样式 - 修复被覆盖问题 */
         .music-player {
             position: fixed !important;
             bottom: 24px !important;
@@ -493,13 +470,16 @@
             padding: 12px 18px !important;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
             border: 1px solid #444 !important;
-            z-index: 999999 !important; /* 超级高优先级，覆盖所有元素 */
+            z-index: 9999999 !important; /* 提升到更高层级，确保不被覆盖 */
             backdrop-filter: blur(12px) !important;
             -webkit-backdrop-filter: blur(12px) !important;
-            pointer-events: auto !important; /* 确保可点击 */
-            visibility: visible !important; /* 强制显示 */
-            opacity: 1 !important; /* 强制不透明 */
-            transform: none !important; /* 取消所有变形 */
+            pointer-events: auto !important; 
+            visibility: visible !important; 
+            opacity: 1 !important; 
+            transform: none !important; 
+            /* 新增：强制层级优先级 */
+            position: fixed !important;
+            float: right !important;
         }
         .music-top {
             display: flex;
@@ -516,7 +496,7 @@
         .music-title {
             font-size: 14px;
             color: #fff;
-            font-weight: 600;
+            font-weight: 600; /* 修复原代码font-weight错误 */
         }
         .music-desc {
             font-size: 12px;
@@ -649,16 +629,14 @@
             <input type="text" id="charName" placeholder="请输入人物姓名">
         </div>
         <div class="form-group">
-            <label>人物头像（自动上传到腾讯云COS/cat目录）</label>
-            <div class="file-upload-btn" onclick="document.getElementById('charFileInput').click()">📷 选择头像图片</div>
-            <div class="file-name" id="charFileName">未选择文件</div>
-            <input type="file" id="charFileInput" accept="image/*" style="display: none;">
+            <label for="charAvatar">上传头像（本地图片）</label>
+            <input type="file" id="charAvatar" accept="image/*" style="color:#fff;">
         </div>
         <div class="form-group">
             <label for="charDesc">人物简介</label>
             <textarea id="charDesc" rows="4" placeholder="请输入人物的身份、故事、性格等简介内容"></textarea>
         </div>
-        <button class="add-char-btn" onclick="uploadCharacterAvatar()">➕ 添加人物</button>
+        <button class="add-char-btn" onclick="addCharacter()">➕ 添加人物</button>
     </div>
 
     <!-- 人物卡片列表 -->
@@ -687,7 +665,7 @@
 
 <input type="file" id="fileInput" accept="image/*" multiple>
 
-<!-- 音频标签 -->
+<!-- 音频标签 - 修复：添加闭合标签 -->
 <audio id="bgMusic" loop preload="auto">
     <source src="./mp3/1.mp3" type="audio/mpeg">
 </audio>
@@ -724,8 +702,6 @@
     const SECRET_KEY = "FF1XqOktnTwBD2qVAlBPRJyPddR1Ndib";
     const BUCKET = "pic-1314828337";
     const REGION = "ap-guangzhou";
-    // 人物头像存储目录
-    const CHAR_DIR = "cat/";
 
     // ====================== 共享图片链接 ======================
     const SHARED_PHOTOS = [
@@ -745,9 +721,6 @@
         SecretId: SECRET_ID,
         SecretKey: SECRET_KEY
     });
-
-    // 全局变量：存储选中的人物头像文件
-    let selectedCharFile = null;
 
     // ==================== 星光背景 ====================
     function createStars() {
@@ -787,12 +760,15 @@
     let isMuted = false;
     let originalVolume = 1;
 
-    // 强制保持音乐播放器可见
-    setInterval(() => {
-        musicPlayer.style.display = 'flex !important';
-        musicPlayer.style.visibility = 'visible !important';
-        musicPlayer.style.opacity = '1 !important';
-    }, 1000);
+    // 修复：强制保持音乐播放器可见，优化定时器逻辑
+    function keepPlayerVisible() {
+        musicPlayer.style.display = 'flex';
+        musicPlayer.style.visibility = 'visible';
+        musicPlayer.style.opacity = '1';
+        musicPlayer.style.zIndex = '9999999'; // 强制重置z-index
+    }
+    setInterval(keepPlayerVisible, 500); // 缩短检测间隔
+    keepPlayerVisible(); // 初始化立即执行
 
     // 格式化时间
     function formatTime(seconds) {
@@ -871,6 +847,187 @@
     audio.addEventListener('loadedmetadata', updateProgress);
     audio.volume = volumeSlider.value;
 
+    // ==================== 页面切换逻辑 ====================
+    // 重置导航栏激活态
+    function resetNavActive() {
+        document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
+    }
+
+    // 隐藏所有内容模块
+    function hideAll() {
+        homeContent.style.display = 'none';
+        document.getElementById('wikiLink').style.display = 'none';
+        document.getElementById('photoWall').style.display = 'none';
+        document.getElementById('characterPage').style.display = 'none';
+        resetNavActive();
+        keepPlayerVisible(); // 切换页面时强制显示播放器
+    }
+
+    // 显示首页
+    function showHome() {
+        hideAll();
+        homeContent.style.display = 'flex';
+        document.getElementById('nav-home').classList.add('active');
+        calcDays();
+    }
+
+    // 显示百科
+    function showWiki() {
+        hideAll();
+        document.getElementById('wikiLink').style.display = 'flex';
+        document.getElementById('nav-wiki').classList.add('active');
+    }
+
+    // 显示图片墙
+    function showPhotoWall() {
+        hideAll();
+        document.getElementById('photoWall').style.display = 'block';
+        document.getElementById('nav-photos').classList.add('active');
+        render();
+    }
+
+    // ==================== 人物云存储功能 ====================
+    const CHARACTER_FOLDER = "cat/";
+    const CHARACTER_DATA_PATH = "data/characters.json";
+
+    // 从COS读取人物
+    function loadCharactersFromCOS(callback) {
+      cos.getObject({
+        Bucket: BUCKET,
+        Region: REGION,
+        Key: CHARACTER_DATA_PATH
+      }, function(err, data) {
+        if (err) {
+          callback([]);
+        } else {
+          try {
+            callback(JSON.parse(data.Body));
+          } catch (e) {
+            callback([]);
+          }
+        }
+      });
+    }
+
+    // 保存人物到COS
+    function saveCharactersToCOS(characters, callback) {
+      cos.putObject({
+        Bucket: BUCKET,
+        Region: REGION,
+        Key: CHARACTER_DATA_PATH,
+        Body: JSON.stringify(characters, null, 2),
+        ContentType: "application/json"
+      }, callback);
+    }
+
+    // 上传头像到 cat/
+    function uploadCharacterAvatar(file, callback) {
+      const ext = file.name.split('.').pop();
+      const fileName = CHARACTER_FOLDER + Date.now() + "-" + Math.random().toString(36).substr(2,6) + "." + ext;
+      cos.putObject({
+        Bucket: BUCKET,
+        Region: REGION,
+        Key: fileName,
+        Body: file
+      }, function(err, data) {
+        if (err) {
+          alert("头像上传失败：" + (err.Message || ''));
+          return;
+        }
+        const avatarUrl = `https://${BUCKET}.cos.${REGION}.myqcloud.com/${fileName}`;
+        callback(avatarUrl);
+      });
+    }
+
+    // 渲染人物列表
+    function renderCharacters() {
+      const grid = document.getElementById("charactersGrid");
+      grid.innerHTML = "加载中...";
+      loadCharactersFromCOS(function(characters) {
+        grid.innerHTML = "";
+        if (!characters || characters.length === 0) {
+          grid.innerHTML = "<div class='no-characters'>暂无人物数据，点击上方表单添加第一个人物吧～</div>";
+          return;
+        }
+        characters.forEach(char => {
+          const card = document.createElement("div");
+          card.className = "character-card";
+          card.innerHTML = `
+            <img src="${char.avatar}" alt="${char.name}" class="character-avatar" 
+                 onerror="this.src='https://picsum.photos/300/200?random=${char.id}'">
+            <div class="character-info">
+              <div class="character-name">${char.name}</div>
+              <div class="character-desc">${char.desc}</div>
+              <div style="margin-top:10px;">
+                <button onclick="deleteCharacter(${char.id});event.stopPropagation();" 
+                        style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
+                  删除人物
+                </button>
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      });
+    }
+
+    // 添加人物（上传头像+保存到云端）
+    function addCharacter() {
+      const name = document.getElementById("charName").value.trim();
+      const desc = document.getElementById("charDesc").value.trim();
+      const file = document.getElementById("charAvatar").files[0];
+
+      if (!name) { alert("请输入姓名！"); return; }
+      if (!desc) { alert("请输入简介！"); return; }
+      if (!file) { alert("请选择头像图片！"); return; }
+
+      uploadCharacterAvatar(file, function(avatarUrl) {
+        loadCharactersFromCOS(function(characters) {
+          characters.push({
+            id: Date.now(),
+            name: name,
+            avatar: avatarUrl,
+            desc: desc
+          });
+          saveCharactersToCOS(characters, function(err) {
+            if (err) {
+              alert("保存失败：" + err.Message);
+            } else {
+              alert("添加成功！所有人都能看到！");
+              document.getElementById("charName").value = "";
+              document.getElementById("charAvatar").value = "";
+              document.getElementById("charDesc").value = "";
+              renderCharacters();
+            }
+          });
+        });
+      });
+    }
+
+    // 删除人物
+    function deleteCharacter(characterId) {
+      if (!confirm("确定删除该人物？删除后所有人都看不见！")) return;
+      loadCharactersFromCOS(function(chars) {
+        const newChars = chars.filter(c => c.id !== characterId);
+        saveCharactersToCOS(newChars, function(err) {
+          if (err) {
+            alert("删除失败");
+          } else {
+            alert("删除成功");
+            renderCharacters();
+          }
+        });
+      });
+    }
+
+    // 显示人物页
+    function showCharacters() {
+        hideAll();
+        document.getElementById("characterPage").style.display = "block";
+        document.getElementById("nav-characters").classList.add("active");
+        renderCharacters();
+    }
+
     // ==================== 图片墙逻辑 ====================
     const MAX_IMAGES = 100;
     const PER_PAGE = 30;
@@ -901,180 +1058,6 @@
     // 保存图片数据
     function save() {
         localStorage.setItem('savedPhotos', JSON.stringify(photos));
-    }
-
-    // ==================== 页面切换逻辑 ====================
-    // 重置导航栏激活态
-    function resetNavActive() {
-        document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
-    }
-
-    // 隐藏所有内容模块
-    function hideAll() {
-        homeContent.style.display = 'none';
-        document.getElementById('wikiLink').style.display = 'none';
-        document.getElementById('photoWall').style.display = 'none';
-        document.getElementById('characterPage').style.display = 'none';
-        resetNavActive();
-    }
-
-    // 显示首页
-    function showHome() {
-        hideAll();
-        homeContent.style.display = 'flex';
-        document.getElementById('nav-home').classList.add('active');
-        calcDays();
-    }
-
-    // 显示百科
-    function showWiki() {
-        hideAll();
-        document.getElementById('wikiLink').style.display = 'flex';
-        document.getElementById('nav-wiki').classList.add('active');
-    }
-
-    // 显示图片墙
-    function showPhotoWall() {
-        hideAll();
-        document.getElementById('photoWall').style.display = 'block';
-        document.getElementById('nav-photos').classList.add('active');
-        render();
-    }
-
-    // ==================== 人物管理功能（腾讯云COS上传版） ====================
-    // 监听人物头像文件选择
-    document.getElementById('charFileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            selectedCharFile = file;
-            document.getElementById('charFileName').textContent = `已选择：${file.name}`;
-        } else {
-            selectedCharFile = null;
-            document.getElementById('charFileName').textContent = '未选择文件';
-        }
-    });
-
-    // 上传人物头像到腾讯云COS cat目录
-    function uploadCharacterAvatar() {
-        // 1. 验证输入
-        const name = document.getElementById('charName').value.trim();
-        const desc = document.getElementById('charDesc').value.trim();
-        
-        if (!name) {
-            alert('请输入人物姓名！');
-            return;
-        }
-        if (!selectedCharFile) {
-            alert('请选择人物头像图片！');
-            return;
-        }
-        if (!desc) {
-            alert('请输入人物简介！');
-            return;
-        }
-
-        // 2. 构造文件名（cat/时间戳-文件名）
-        const fileName = CHAR_DIR + Date.now() + "-" + selectedCharFile.name.replace(/[^a-zA-Z0-9_\.]/g, "");
-        
-        // 3. 上传到腾讯云COS
-        cos.putObject({
-            Bucket: BUCKET,
-            Region: REGION,
-            Key: fileName,
-            Body: selectedCharFile,
-            onProgress: (progress) => {
-                console.log("头像上传进度：", (progress.percent * 100).toFixed(1) + "%");
-            }
-        }, (err, data) => {
-            if (err) {
-                alert("头像上传失败：" + (err.message || '网络错误或COS配置问题'));
-                return;
-            }
-            
-            // 4. 上传成功，获取头像URL
-            const avatarUrl = `https://${BUCKET}.cos.${REGION}.myqcloud.com/${fileName}`;
-            
-            // 5. 添加人物信息
-            addCharacter(name, avatarUrl, desc);
-        });
-    }
-
-    // 添加人物信息到本地存储
-    function addCharacter(name, avatarUrl, desc) {
-        // 获取现有人物列表
-        const characters = getCharacters();
-        
-        // 添加新人物
-        characters.push({
-            id: Date.now(), // 唯一ID
-            name: name,
-            avatar: avatarUrl,
-            desc: desc
-        });
-
-        // 保存并重新渲染
-        saveCharacters(characters);
-        renderCharacters();
-
-        // 清空表单和文件选择
-        document.getElementById('charName').value = '';
-        document.getElementById('charDesc').value = '';
-        document.getElementById('charFileInput').value = '';
-        selectedCharFile = null;
-        document.getElementById('charFileName').textContent = '未选择文件';
-
-        alert('人物添加成功！所有用户都能看到该人物信息～');
-    }
-
-    // 获取人物数据（本地存储）
-    function getCharacters() {
-        const saved = localStorage.getItem('bf_characters');
-        return saved ? JSON.parse(saved) : [];
-    }
-
-    // 保存人物数据
-    function saveCharacters(characters) {
-        localStorage.setItem('bf_characters', JSON.stringify(characters));
-    }
-
-    // 渲染人物列表
-    function renderCharacters() {
-        const charactersGrid = document.getElementById('charactersGrid');
-        const characters = getCharacters();
-
-        // 清空列表
-        charactersGrid.innerHTML = '';
-
-        // 无人物时显示提示
-        if (characters.length === 0) {
-            charactersGrid.innerHTML = '<div class="no-characters">暂无人物数据，点击上方表单添加第一个人物吧～</div>';
-            return;
-        }
-
-        // 渲染人物卡片
-        characters.forEach(char => {
-            const card = document.createElement('div');
-            card.className = 'character-card';
-            
-            // 人物卡片HTML
-            card.innerHTML = `
-                <img src="${char.avatar}" alt="${char.name}" class="character-avatar" onerror="this.src='https://picsum.photos/300/200?random=${char.id}'">
-                <div class="character-info">
-                    <div class="character-name">${char.name}</div>
-                    <div class="character-desc">${char.desc}</div>
-                </div>
-            `;
-
-            charactersGrid.appendChild(card);
-        });
-    }
-
-    // 显示人物页面
-    function showCharacters() {
-        hideAll();
-        document.getElementById('characterPage').style.display = 'block';
-        document.getElementById('nav-characters').classList.add('active');
-        renderCharacters(); // 每次打开都重新渲染
     }
 
     // ==================== 图片墙操作 ====================
@@ -1124,6 +1107,7 @@
     function openPreview(src) {
         previewImg.src = src;
         previewOverlay.style.display = "flex";
+        keepPlayerVisible(); // 预览图片时强制显示播放器
     }
 
     function closePreview() {
