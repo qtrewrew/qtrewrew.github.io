@@ -395,6 +395,22 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 15px rgba(255,204,85,0.2);
         }
+        .cancel-edit-btn {
+            background: #444;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+        .cancel-edit-btn:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
         .characters-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -424,38 +440,31 @@
             padding: 18px;
             text-align: center;
         }
-        /* 强化人物标题样式，确保所有标题统一标黄 */
         .character-name {
             font-size: 18px;
-            color: #ffcc55 !important; /* 强制优先级 */
+            color: #ffcc55;
             margin-bottom: 10px;
             font-weight: bold;
             position: relative;
-            text-shadow: 0 0 5px rgba(255, 204, 85, 0.3);
         }
-        /* 美化简介样式 - 单行排列优化 */
         .character-desc {
             font-size: 14px;
             color: #e0e0e0;
-            line-height: 2; /* 增大行高，让每行更清晰 */
-            display: none; /* 默认隐藏 */
+            line-height: 2;
+            display: none;
             margin: 15px 0;
-            padding: 15px 20px; /* 增加内边距 */
+            padding: 15px 20px;
             background: linear-gradient(135deg, rgba(25,25,25,0.8), rgba(15,15,15,0.8));
             border-radius: 8px;
             border-left: 3px solid #ffcc55;
             text-align: left;
             animation: fadeIn 0.3s ease-in-out;
-            white-space: pre-line; /* 保留换行符 */
+            white-space: pre-line;
         }
-        /* 高亮字段名 - 确保所有字段名统一标黄 */
-        .character-desc .field {
-            color: #ffcc55 !important; /* 强制优先级 */
+        .character-desc span.field {
+            color: #ffcc55;
             font-weight: 600;
-            display: inline-block;
-            min-width: 80px; /* 统一字段名宽度，排版更整齐 */
         }
-        /* 展开/收起动画 */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -467,7 +476,6 @@
             font-size: 16px;
         }
 
-        /* 修复音乐播放器样式 - 确保始终显示 */
         .music-player {
             position: fixed !important;
             bottom: 24px !important;
@@ -483,7 +491,7 @@
             padding: 12px 18px !important;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
             border: 1px solid #444 !important;
-            z-index: 9999999 !important; /* 最高层级 */
+            z-index: 9999999 !important;
             backdrop-filter: blur(12px) !important;
             -webkit-backdrop-filter: blur(12px) !important;
             pointer-events: auto !important; 
@@ -635,7 +643,6 @@
         </div>
         <div class="form-group">
             <label for="charDesc">人物简介</label>
-            <!-- 修改提示文字，引导按字段格式填写 -->
             <textarea id="charDesc" rows="4" placeholder="请按以下格式填写（每行一个字段）：
 名字：银星
 当前职务：组长
@@ -643,7 +650,8 @@
 性格：沉稳、负责
 备注：核心成员之一"></textarea>
         </div>
-        <button class="add-char-btn" onclick="addCharacter()">➕ 添加人物</button>
+        <button class="add-char-btn" onclick="handleCharacterBtn()">➕ 添加人物</button>
+        <button class="cancel-edit-btn" onclick="clearForm()">取消编辑</button>
     </div>
 
     <div class="characters-grid" id="charactersGrid"></div>
@@ -668,12 +676,10 @@
 
 <input type="file" id="fileInput" accept="image/*" multiple>
 
-<!-- 修复：补全audio闭合标签 -->
 <audio id="bgMusic" loop preload="auto">
     <source src="./mp3/1.mp3" type="audio/mpeg">
 </audio>
 
-<!-- 音乐播放器 - 确保层级最高 -->
 <div class="music-player" id="musicPlayer">
     <div class="music-top">
         <div class="music-info">
@@ -700,11 +706,13 @@
 </div>
 
 <script>
+    // 腾讯云COS配置
     const SECRET_ID = "AKIDeLp44oLejY9wVpukMlvrc9SXhcHitpWz";
     const SECRET_KEY = "FF1XqOktnTwBD2qVAlBPRJyPddR1Ndib";
     const BUCKET = "pic-1314828337";
     const REGION = "ap-guangzhou";
 
+    // 初始图片列表
     const SHARED_PHOTOS = [
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575660384-1.jpg",
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575875419-2.jpg",
@@ -717,11 +725,14 @@
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575923126-9.jpg"
     ];
 
+    // 初始化COS实例
     const cos = new COS({
         SecretId: SECRET_ID,
         SecretKey: SECRET_KEY
     });
 
+    // ====================== 通用功能 ======================
+    // 创建星空背景
     function createStars() {
         const stars = document.getElementById('stars');
         for (let i = 0; i < 80; i++) {
@@ -737,6 +748,7 @@
         }
     }
 
+    // 计算天数
     function calcDays() {
         const start = new Date('2016-08-06');
         const now = new Date();
@@ -744,6 +756,7 @@
         document.getElementById('dayCount').innerText = diff;
     }
 
+    // ====================== 音乐播放器 ======================
     const audio = document.getElementById('bgMusic');
     const playBtn = document.getElementById('playBtn');
     const pauseBtn = document.getElementById('pauseBtn');
@@ -764,15 +777,17 @@
         musicPlayer.style.opacity = '1';
         musicPlayer.style.zIndex = '9999999';
     }
-    setInterval(keepPlayerVisible, 100); // 缩短检测间隔
-    keepPlayerVisible(); // 初始化立即执行
+    setInterval(keepPlayerVisible, 100);
+    keepPlayerVisible();
 
+    // 格式化时间
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
+    // 更新播放进度
     function updateProgress() {
         if (audio.duration) {
             const progressPercent = (audio.currentTime / audio.duration) * 100;
@@ -781,11 +796,13 @@
         }
     }
 
+    // 页面交互后加载音频
     document.addEventListener('click', () => {
         hasInteracted = true;
         audio.load();
     }, { once: true });
 
+    // 播放按钮
     playBtn.onclick = () => {
         if (!hasInteracted) {
             alert('请先点击页面任意位置，再播放音乐！');
@@ -797,8 +814,10 @@
         });
     };
 
+    // 暂停按钮
     pauseBtn.onclick = () => audio.pause();
 
+    // 静音按钮
     muteBtn.onclick = () => {
         isMuted = !isMuted;
         if (isMuted) {
@@ -815,6 +834,7 @@
         }
     };
 
+    // 音量调节
     volumeSlider.addEventListener('input', () => {
         audio.volume = volumeSlider.value;
         if (volumeSlider.value == 0) {
@@ -829,16 +849,19 @@
         }
     });
 
+    // 进度条点击跳转
     progressContainer.addEventListener('click', (e) => {
         const progressWidth = progressContainer.clientWidth;
         const clickX = e.offsetX;
         audio.currentTime = (clickX / progressWidth) * audio.duration;
     });
 
+    // 监听音频进度更新
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('loadedmetadata', updateProgress);
     audio.volume = volumeSlider.value;
 
+    // ====================== 导航切换 ======================
     function resetNavActive() {
         document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
     }
@@ -849,7 +872,7 @@
         document.getElementById('photoWall').style.display = 'none';
         document.getElementById('characterPage').style.display = 'none';
         resetNavActive();
-        keepPlayerVisible(); // 切换页面强制显示播放器
+        keepPlayerVisible();
     }
 
     function showHome() {
@@ -872,9 +895,12 @@
         render();
     }
 
+    // ====================== 人物管理（核心） ======================
     const CHARACTER_FOLDER = "cat/";
     const CHARACTER_DATA_PATH = "data/characters.json";
+    let currentEditId = null; // 正在编辑的人物ID
 
+    // 从COS加载人物数据
     function loadCharactersFromCOS(callback) {
       cos.getObject({
         Bucket: BUCKET,
@@ -893,6 +919,7 @@
       });
     }
 
+    // 保存人物数据到COS
     function saveCharactersToCOS(characters, callback) {
       cos.putObject({
         Bucket: BUCKET,
@@ -903,6 +930,7 @@
       }, callback);
     }
 
+    // 上传人物头像到COS
     function uploadCharacterAvatar(file, callback) {
       const ext = file.name.split('.').pop();
       const fileName = CHARACTER_FOLDER + Date.now() + "-" + Math.random().toString(36).substr(2,6) + "." + ext;
@@ -921,36 +949,28 @@
       });
     }
 
-    // 格式化简介内容，高亮字段名（兼容全角/半角冒号，确保所有字段名统一标黄）
+    // 格式化简介内容（高亮字段名）
     function formatCharacterDesc(desc) {
         if (!desc) return '';
-        // 按换行分割，处理每一行
         const lines = desc.split('\n').filter(line => line.trim() !== '');
-        // 对每行进行格式化，兼容全角冒号（：）和半角冒号（:）
         return lines.map(line => {
-            // 匹配全角冒号或半角冒号
-            const colonIndex = line.indexOf('：') > -1 ? line.indexOf('：') : line.indexOf(':');
+            const colonIndex = line.indexOf('：');
             if (colonIndex > 0) {
                 const field = line.substring(0, colonIndex + 1);
                 const value = line.substring(colonIndex + 1);
-                // 给字段名添加field类，确保标黄
                 return `<span class="field">${field}</span>${value}`;
             }
-            // 如果没有冒号，也给整行添加field类（确保所有小标题都标黄）
-            return `<span class="field">${line.split('：')[0]}：</span>${line.split('：')[1] || ''}`;
-        }).join('<br>'); // 用br标签实现换行
+            return line;
+        }).join('<br>');
     }
 
-    // 点击卡片展开/收起简介（优化动画）
+    // 展开/收起人物简介
     function toggleDesc(card) {
         const desc = card.querySelector('.character-desc');
-        if (desc.style.display === 'none' || desc.style.display === '') {
-            desc.style.display = 'block';
-        } else {
-            desc.style.display = 'none';
-        }
+        desc.style.display = (desc.style.display === 'block') ? 'none' : 'block';
     }
 
+    // 渲染人物列表
     function renderCharacters() {
       const grid = document.getElementById("charactersGrid");
       grid.innerHTML = "加载中...";
@@ -960,25 +980,25 @@
           grid.innerHTML = "<div class='no-characters'>暂无人物数据，点击上方表单添加第一个人物吧～</div>";
           return;
         }
-        // 确保人物列表渲染顺序稳定
-        characters.sort((a, b) => a.id - b.id);
         characters.forEach(char => {
           const card = document.createElement("div");
           card.className = "character-card";
-          card.setAttribute("onclick", "toggleDesc(this)"); // 点击切换简介
-          // 格式化简介内容（关键：确保所有字段名都标黄）
+          card.setAttribute("onclick", "toggleDesc(this)");
           const formattedDesc = formatCharacterDesc(char.desc);
-          // 统一的人物卡片HTML结构，确保样式一致
           card.innerHTML = `
             <img src="${char.avatar}" alt="${char.name}" class="character-avatar" 
                  onerror="this.src='https://picsum.photos/300/200?random=${char.id}'">
             <div class="character-info">
               <div class="character-name">${char.name}</div>
               <div class="character-desc">${formattedDesc}</div>
-              <div style="margin-top:10px;">
+              <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+                <button onclick="editCharacter(${char.id});event.stopPropagation();" 
+                        style="background:#3a6ea5;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
+                  编辑
+                </button>
                 <button onclick="deleteCharacter(${char.id});event.stopPropagation();" 
                         style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
-                  删除人物
+                  删除
                 </button>
               </div>
             </div>
@@ -988,6 +1008,7 @@
       });
     }
 
+    // 添加新人物
     function addCharacter() {
       const name = document.getElementById("charName").value.trim();
       const desc = document.getElementById("charDesc").value.trim();
@@ -1010,10 +1031,7 @@
               alert("保存失败：" + err.Message);
             } else {
               alert("添加成功！所有人都能看到！");
-              document.getElementById("charName").value = "";
-              document.getElementById("charAvatar").value = "";
-              document.getElementById("charDesc").value = "";
-              // 重新渲染人物列表，确保新添加的人物样式统一
+              clearForm();
               renderCharacters();
             }
           });
@@ -1021,6 +1039,90 @@
       });
     }
 
+    // 编辑人物（回填数据到表单）
+    function editCharacter(charId) {
+        currentEditId = charId;
+        loadCharactersFromCOS(function(chars) {
+            const char = chars.find(c => c.id === charId);
+            if (!char) return;
+            document.getElementById("charName").value = char.name;
+            document.getElementById("charDesc").value = char.desc;
+            alert("已加载该人物信息，修改后点「保存修改」即可同步到云端！");
+            document.querySelector(".add-char-btn").innerText = "保存修改";
+        });
+    }
+
+    // 清空表单并重置编辑状态
+    function clearForm() {
+        document.getElementById("charName").value = "";
+        document.getElementById("charAvatar").value = "";
+        document.getElementById("charDesc").value = "";
+        currentEditId = null;
+        document.querySelector(".add-char-btn").innerText = "➕ 添加人物";
+    }
+
+    // 保存人物修改
+    function saveEditCharacter() {
+        const name = document.getElementById("charName").value.trim();
+        const desc = document.getElementById("charDesc").value.trim();
+        const file = document.getElementById("charAvatar").files[0];
+
+        if (!name || !desc) {
+            alert("姓名和简介不能为空！");
+            return;
+        }
+
+        loadCharactersFromCOS(function(chars) {
+            const index = chars.findIndex(c => c.id === currentEditId);
+            if (index === -1) {
+                alert("未找到该人物！");
+                clearForm();
+                return;
+            }
+
+            // 无新头像：仅更新文字信息
+            if (!file) {
+                chars[index].name = name;
+                chars[index].desc = desc;
+                saveCharactersToCOS(chars, function(err) {
+                    if (err) {
+                        alert("修改失败：" + err.Message);
+                    } else {
+                        alert("修改成功！已同步到云端，所有人可见！");
+                        clearForm();
+                        renderCharacters();
+                    }
+                });
+            } else {
+                // 有新头像：先上传头像再更新
+                uploadCharacterAvatar(file, function(newAvatar) {
+                    chars[index].name = name;
+                    chars[index].desc = desc;
+                    chars[index].avatar = newAvatar;
+                    saveCharactersToCOS(chars, function(err) {
+                        if (err) {
+                            alert("修改失败：" + err.Message);
+                        } else {
+                            alert("头像+简介修改成功！已同步云端！");
+                            clearForm();
+                            renderCharacters();
+                        }
+                    });
+                });
+            }
+        });
+    }
+
+    // 统一处理添加/修改按钮点击
+    function handleCharacterBtn() {
+        if (currentEditId !== null) {
+            saveEditCharacter();
+        } else {
+            addCharacter();
+        }
+    }
+
+    // 删除人物
     function deleteCharacter(characterId) {
       if (!confirm("确定删除该人物？删除后所有人都看不见！")) return;
       loadCharactersFromCOS(function(chars) {
@@ -1036,6 +1138,7 @@
       });
     }
 
+    // 显示人物页面
     function showCharacters() {
         hideAll();
         document.getElementById("characterPage").style.display = "block";
@@ -1043,6 +1146,7 @@
         renderCharacters();
     }
 
+    // ====================== 图片墙 ======================
     const MAX_IMAGES = 100;
     const PER_PAGE = 30;
     let photos = [];
@@ -1056,6 +1160,7 @@
     const previewImg = document.getElementById('previewImg');
     const homeContent = document.getElementById('homeContent');
 
+    // 初始化图片列表
     function initPhotos() {
         photos = [...SHARED_PHOTOS];
         const saved = localStorage.getItem('savedPhotos');
@@ -1068,10 +1173,12 @@
         render();
     }
 
+    // 保存图片列表到本地存储
     function save() {
         localStorage.setItem('savedPhotos', JSON.stringify(photos));
     }
 
+    // 上传图片到COS
     function uploadToCOS(file, callback) {
         const fileName = "upload/" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9_\.]/g, "");
         
@@ -1093,6 +1200,7 @@
         });
     }
 
+    // 触发添加图片
     function triggerAdd() {
         if (photos.length >= MAX_IMAGES) {
             alert('最多 100 张');
@@ -1115,16 +1223,19 @@
         fileInput.click();
     }
 
+    // 预览图片
     function openPreview(src) {
         previewImg.src = src;
         previewOverlay.style.display = "flex";
         keepPlayerVisible();
     }
 
+    // 关闭图片预览
     function closePreview() {
         previewOverlay.style.display = "none";
     }
 
+    // 替换图片
     function startReplace(index) {
         replaceIndex = index;
         fileInput.onchange = null;
@@ -1142,6 +1253,7 @@
         fileInput.click();
     }
 
+    // 渲染图片墙
     function render() {
         const totalPages = Math.ceil(photos.length / PER_PAGE);
         const start = (currentPage - 1) * PER_PAGE;
@@ -1192,6 +1304,7 @@
             photoContainer.appendChild(card);
         });
 
+        // 渲染分页
         pagination.innerHTML = '';
         for (let p = 1; p <= totalPages; p++) {
             const btn = document.createElement('button');
@@ -1205,7 +1318,7 @@
         }
     }
 
-    // 初始化
+    // ====================== 初始化 ======================
     createStars();
     calcDays();
     initPhotos();
