@@ -423,7 +423,6 @@
             overflow: hidden;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
-            cursor: pointer;
         }
         .character-card:hover {
             transform: translateY(-5px);
@@ -451,23 +450,72 @@
             font-size: 14px;
             color: #e0e0e0;
             line-height: 2;
-            display: none;
             margin: 15px 0;
             padding: 15px 20px;
             background: linear-gradient(135deg, rgba(25,25,25,0.8), rgba(15,15,15,0.8));
             border-radius: 8px;
             border-left: 3px solid #ffcc55;
             text-align: left;
-            animation: fadeIn 0.3s ease-in-out;
             white-space: pre-line;
         }
         .character-desc span.field {
             color: #ffcc55;
             font-weight: 600;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* 新增编辑输入框样式 */
+        .edit-input, .edit-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            background: #2a2a2a;
+            border: 1px solid #ffcc55;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .edit-textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.8;
+        }
+        .edit-avatar-btn {
+            background: #3a6ea5;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        .edit-avatar-btn:hover {
+            background: #4a7ebf;
+        }
+        .save-edit-btn {
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 0 4px;
+        }
+        .save-edit-btn:hover {
+            background: #218838;
+        }
+        .cancel-edit-btn-sm {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 0 4px;
+        }
+        .cancel-edit-btn-sm:hover {
+            background: #c82333;
         }
         .no-characters {
             text-align: center;
@@ -657,6 +705,9 @@
     <div class="characters-grid" id="charactersGrid"></div>
 </div>
 
+<!-- 新增：头像上传隐藏输入框 -->
+<input type="file" id="editAvatarInput" accept="image/*" style="display:none;">
+
 <div class="content" id="wikiLink">
     <img src="./pic/blackforeast.jpg" alt="blackforest" width="50">
     <a href="https://blackforestbc.fandom.com/zh/wiki/%E9%BB%91%E6%A3%AE%E6%9E%97%E8%A1%80%E6%97%8F(yq)_Wiki">
@@ -730,6 +781,10 @@
         SecretId: SECRET_ID,
         SecretKey: SECRET_KEY
     });
+
+    // 全局变量：当前编辑的人物ID和临时头像文件
+    let editingCharId = null;
+    let tempAvatarFile = null;
 
     // ====================== 通用功能 ======================
     // 创建星空背景
@@ -898,7 +953,6 @@
     // ====================== 人物管理（核心） ======================
     const CHARACTER_FOLDER = "cat/";
     const CHARACTER_DATA_PATH = "data/characters.json";
-    let currentEditId = null; // 正在编辑的人物ID
 
     // 从COS加载人物数据
     function loadCharactersFromCOS(callback) {
@@ -964,51 +1018,157 @@
         }).join('<br>');
     }
 
-    // 展开/收起人物简介
-    function toggleDesc(card) {
-        const desc = card.querySelector('.character-desc');
-        desc.style.display = (desc.style.display === 'block') ? 'none' : 'block';
+    // 进入编辑模式（核心修改）
+    function enterEditMode(charId) {
+        editingCharId = charId;
+        tempAvatarFile = null;
+        
+        // 获取人物卡片和数据
+        loadCharactersFromCOS(function(chars) {
+            const char = chars.find(c => c.id === charId);
+            if (!char) return;
+            
+            const card = document.querySelector(`[data-char-id="${charId}"]`);
+            if (!card) return;
+            
+            // 获取人物信息区域
+            const infoArea = card.querySelector('.character-info');
+            
+            // 构建编辑表单HTML
+            const editHtml = `
+                <input type="text" class="edit-input" id="editName_${charId}" value="${char.name}" placeholder="人物姓名">
+                <button class="edit-avatar-btn" onclick="selectNewAvatar(${charId})">更换头像</button>
+                <textarea class="edit-textarea" id="editDesc_${charId}" placeholder="人物简介">${char.desc}</textarea>
+                <div style="display:flex; justify-content:center; gap:8px; margin-top:10px;">
+                    <button class="save-edit-btn" onclick="saveInlineEdit(${charId})">保存修改</button>
+                    <button class="cancel-edit-btn-sm" onclick="cancelEditMode(${charId})">取消</button>
+                    <button onclick="deleteCharacter(${charId});event.stopPropagation();" 
+                            style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
+                      删除
+                    </button>
+                </div>
+            `;
+            
+            // 替换为编辑表单
+            infoArea.innerHTML = editHtml;
+        });
     }
 
-    // 渲染人物列表
+    // 选择新头像
+    function selectNewAvatar(charId) {
+        editingCharId = charId;
+        const fileInput = document.getElementById('editAvatarInput');
+        fileInput.onchange = function(e) {
+            tempAvatarFile = e.target.files[0];
+            if (tempAvatarFile) {
+                alert('已选择新头像，点击「保存修改」即可生效！');
+            }
+        };
+        fileInput.click();
+    }
+
+    // 保存行内编辑（核心修改）
+    function saveInlineEdit(charId) {
+        const newName = document.getElementById(`editName_${charId}`).value.trim();
+        const newDesc = document.getElementById(`editDesc_${charId}`).value.trim();
+        
+        if (!newName || !newDesc) {
+            alert('姓名和简介不能为空！');
+            return;
+        }
+        
+        loadCharactersFromCOS(function(chars) {
+            const index = chars.findIndex(c => c.id === charId);
+            if (index === -1) {
+                alert('未找到该人物！');
+                cancelEditMode(charId);
+                return;
+            }
+            
+            // 1. 没有新头像：直接更新文字信息
+            if (!tempAvatarFile) {
+                chars[index].name = newName;
+                chars[index].desc = newDesc;
+                
+                saveCharactersToCOS(chars, function(err) {
+                    if (err) {
+                        alert("修改失败：" + err.Message);
+                    } else {
+                        alert("修改成功！所有人都能看到更新后的信息～");
+                        renderCharacters(); // 重新渲染列表
+                        editingCharId = null;
+                        tempAvatarFile = null;
+                    }
+                });
+            } 
+            // 2. 有新头像：先上传再更新
+            else {
+                uploadCharacterAvatar(tempAvatarFile, function(newAvatarUrl) {
+                    chars[index].name = newName;
+                    chars[index].desc = newDesc;
+                    chars[index].avatar = newAvatarUrl;
+                    
+                    saveCharactersToCOS(chars, function(err) {
+                        if (err) {
+                            alert("修改失败：" + err.Message);
+                        } else {
+                            alert("头像和信息修改成功！所有人都能看到～");
+                            renderCharacters(); // 重新渲染列表
+                            editingCharId = null;
+                            tempAvatarFile = null;
+                        }
+                    });
+                });
+            }
+        });
+    }
+
+    // 取消编辑模式
+    function cancelEditMode(charId) {
+        editingCharId = null;
+        tempAvatarFile = null;
+        renderCharacters(); // 重新渲染恢复原样
+    }
+
+    // 渲染人物列表（核心修改）
     function renderCharacters() {
       const grid = document.getElementById("charactersGrid");
       grid.innerHTML = "加载中...";
+      
       loadCharactersFromCOS(function(characters) {
         grid.innerHTML = "";
+        
         if (!characters || characters.length === 0) {
           grid.innerHTML = "<div class='no-characters'>暂无人物数据，点击上方表单添加第一个人物吧～</div>";
           return;
         }
+        
         characters.forEach(char => {
           const card = document.createElement("div");
           card.className = "character-card";
-          card.setAttribute("onclick", "toggleDesc(this)");
+          card.setAttribute("data-char-id", char.id); // 标记人物ID
+          card.setAttribute("onclick", "enterEditMode(" + char.id + ")"); // 点击卡片进入编辑
+          
           const formattedDesc = formatCharacterDesc(char.desc);
+          
           card.innerHTML = `
             <img src="${char.avatar}" alt="${char.name}" class="character-avatar" 
                  onerror="this.src='https://picsum.photos/300/200?random=${char.id}'">
             <div class="character-info">
               <div class="character-name">${char.name}</div>
               <div class="character-desc">${formattedDesc}</div>
-              <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
-                <button onclick="editCharacter(${char.id});event.stopPropagation();" 
-                        style="background:#3a6ea5;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
-                  编辑
-                </button>
-                <button onclick="deleteCharacter(${char.id});event.stopPropagation();" 
-                        style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
-                  删除
-                </button>
+              <div style="margin-top:10px; color:#999; font-size:12px;">
+                点击卡片即可编辑此人物信息
               </div>
             </div>
           `;
+          
           grid.appendChild(card);
         });
       });
     }
 
-    // 添加新人物
+    // 添加新人物（保持原有逻辑）
     function addCharacter() {
       const name = document.getElementById("charName").value.trim();
       const desc = document.getElementById("charDesc").value.trim();
@@ -1039,99 +1199,30 @@
       });
     }
 
-    // 编辑人物（回填数据到表单）
-    function editCharacter(charId) {
-        currentEditId = charId;
-        loadCharactersFromCOS(function(chars) {
-            const char = chars.find(c => c.id === charId);
-            if (!char) return;
-            document.getElementById("charName").value = char.name;
-            document.getElementById("charDesc").value = char.desc;
-            alert("已加载该人物信息，修改后点「保存修改」即可同步到云端！");
-            document.querySelector(".add-char-btn").innerText = "保存修改";
-        });
-    }
-
-    // 清空表单并重置编辑状态
+    // 清空表单（保持原有逻辑）
     function clearForm() {
         document.getElementById("charName").value = "";
         document.getElementById("charAvatar").value = "";
         document.getElementById("charDesc").value = "";
-        currentEditId = null;
-        document.querySelector(".add-char-btn").innerText = "➕ 添加人物";
     }
 
-    // 保存人物修改
-    function saveEditCharacter() {
-        const name = document.getElementById("charName").value.trim();
-        const desc = document.getElementById("charDesc").value.trim();
-        const file = document.getElementById("charAvatar").files[0];
-
-        if (!name || !desc) {
-            alert("姓名和简介不能为空！");
-            return;
-        }
-
-        loadCharactersFromCOS(function(chars) {
-            const index = chars.findIndex(c => c.id === currentEditId);
-            if (index === -1) {
-                alert("未找到该人物！");
-                clearForm();
-                return;
-            }
-
-            // 无新头像：仅更新文字信息
-            if (!file) {
-                chars[index].name = name;
-                chars[index].desc = desc;
-                saveCharactersToCOS(chars, function(err) {
-                    if (err) {
-                        alert("修改失败：" + err.Message);
-                    } else {
-                        alert("修改成功！已同步到云端，所有人可见！");
-                        clearForm();
-                        renderCharacters();
-                    }
-                });
-            } else {
-                // 有新头像：先上传头像再更新
-                uploadCharacterAvatar(file, function(newAvatar) {
-                    chars[index].name = name;
-                    chars[index].desc = desc;
-                    chars[index].avatar = newAvatar;
-                    saveCharactersToCOS(chars, function(err) {
-                        if (err) {
-                            alert("修改失败：" + err.Message);
-                        } else {
-                            alert("头像+简介修改成功！已同步云端！");
-                            clearForm();
-                            renderCharacters();
-                        }
-                    });
-                });
-            }
-        });
-    }
-
-    // 统一处理添加/修改按钮点击
+    // 统一处理添加按钮点击
     function handleCharacterBtn() {
-        if (currentEditId !== null) {
-            saveEditCharacter();
-        } else {
-            addCharacter();
-        }
+        addCharacter();
     }
 
-    // 删除人物
+    // 删除人物（保持原有逻辑）
     function deleteCharacter(characterId) {
       if (!confirm("确定删除该人物？删除后所有人都看不见！")) return;
+      
       loadCharactersFromCOS(function(chars) {
         const newChars = chars.filter(c => c.id !== characterId);
+        
         saveCharactersToCOS(newChars, function(err) {
           if (err) {
-            alert("删除失败");
+            alert("删除失败：" + err.Message);
           } else {
-            alert("删除成功");
+            alert("删除成功！");
             renderCharacters();
           }
         });
