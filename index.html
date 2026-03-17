@@ -1145,40 +1145,37 @@
     }
 
     // 进入编辑模式（核心修改）
-    function enterEditMode(charId) {
-        editingCharId = charId;
-        tempAvatarFile = null;
-        
-        // 获取人物卡片和数据
-        loadCharactersFromCOS(function(chars) {
-            const char = chars.find(c => c.id === charId);
-            if (!char) return;
-            
-            const card = document.querySelector(`[data-char-id="${charId}"]`);
-            if (!card) return;
-            
-            // 获取人物信息区域
-            const infoArea = card.querySelector('.character-info');
-            
-            // 构建编辑表单HTML
-            const editHtml = `
-                <input type="text" class="edit-input" id="editName_${charId}" value="${char.name}" placeholder="人物姓名">
-                <button class="edit-avatar-btn" onclick="selectNewAvatar(${charId})">更换头像</button>
-                <textarea class="edit-textarea" id="editDesc_${charId}" placeholder="人物简介">${char.desc}</textarea>
-                <div style="display:flex; justify-content:center; gap:8px; margin-top:10px;">
-                    <button class="save-edit-btn" onclick="saveInlineEdit(${charId})">保存修改</button>
-                    <button class="cancel-edit-btn-sm" onclick="cancelEditMode(${charId})">取消</button>
-                    <button onclick="deleteCharacter(${charId});event.stopPropagation();" 
-                            style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
-                      删除
-                    </button>
-                </div>
-            `;
-            
-            // 替换为编辑表单
-            infoArea.innerHTML = editHtml;
-        });
-    }
+    // 进入编辑模式（修复版）
+  function enterEditMode(charId) {
+  editingCharId = charId;
+  tempAvatarFile = null;
+
+  loadCharactersFromCOS(function (chars) {
+    const char = chars.find(c => c.id === charId);
+    if (!char) return;
+
+    const card = document.querySelector(`[data-char-id="${charId}"]`);
+    if (!card) return;
+
+    const infoArea = card.querySelector('.character-info');
+
+    const editHtml = `
+      <input type="text" class="edit-input" id="editName_${charId}" value="${char.name}" placeholder="人物姓名">
+      <button class="edit-avatar-btn" onclick="selectNewAvatar(${charId})">更换头像</button>
+      <textarea class="edit-textarea" id="editDesc_${charId}" placeholder="人物简介">${char.desc}</textarea>
+      <div style="display:flex; justify-content:center; gap:8px; margin-top:10px;">
+        <button class="save-edit-btn" onclick="saveInlineEdit(${charId})">保存修改</button>
+        <button class="cancel-edit-btn-sm" onclick="cancelEditMode(${charId})">取消</button>
+        <button onclick="deleteCharacter(${charId});event.stopPropagation();" 
+                style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
+          删除
+        </button>
+      </div>
+    `;
+
+    infoArea.innerHTML = editHtml;
+  });
+}
 
     // 选择新头像
     function selectNewAvatar(charId) {
@@ -1257,39 +1254,52 @@
     }
 
     // 渲染人物列表（核心修改）
-    function renderCharacters() {
-      const grid = document.getElementById("charactersGrid");
-      grid.innerHTML = "加载中...";
-      
-      loadCharactersFromCOS(function(characters) {
-        grid.innerHTML = "";
-        
-        if (!characters || characters.length === 0) {
-          grid.innerHTML = "<div class='no-characters'>暂无人物数据，点击上方表单添加第一个人物吧～</div>";
-          return;
-        }
-        
-        characters.forEach(char => {
-          const card = document.createElement("div");
-          card.className = "character-card";
-          card.setAttribute("data-char-id", char.id); // 标记人物ID
-         // 只给“名字”绑定点击，不绑定整个卡片
+    // 渲染人物列表（最终修复版）
+function renderCharacters() {
+  const grid = document.getElementById("charactersGrid");
+  grid.innerHTML = "加载中...";
 
-         const nameEl = card.querySelector('.character-name');
+  loadCharactersFromCOS(function (characters) {
+    grid.innerHTML = "";
 
-         if (nameEl) {
- 
-            nameEl.style.cursor = 'pointer';
-  
-            nameEl.onclick = (e) => {
-    
-                e.stopPropagation();
-    
-                enterEditMode(char.id);
- 
-            };
+    if (!characters || characters.length === 0) {
+      grid.innerHTML = "<div class='no-characters'>暂无人物数据，点击上方表单添加第一个人物吧～</div>";
+      return;
+    }
 
-        }        // 点击卡片进入编辑
+    characters.forEach(char => {
+      const card = document.createElement("div");
+      card.className = "character-card";
+      card.setAttribute("data-char-id", char.id);
+
+      const formattedDesc = formatCharacterDesc(char.desc);
+
+      card.innerHTML = `
+        <img src="${char.avatar}" alt="${char.name}" class="character-avatar" 
+             onerror="this.src='https://picsum.photos/300/200?random=${char.id}'">
+        <div class="character-info">
+          <div class="character-name" id="charName_${char.id}">${char.name}</div>
+          <div class="character-desc">${formattedDesc}</div>
+          <div style="margin-top:10px; color:#999; font-size:12px;">
+            点击姓名即可编辑此人物信息
+          </div>
+        </div>
+      `;
+
+      grid.appendChild(card);
+
+      // 绑定点击姓名进入编辑
+      const nameEl = document.getElementById(`charName_${char.id}`);
+      nameEl.style.cursor = "pointer";
+      nameEl.onclick = function (e) {
+        e.stopPropagation();
+        enterEditMode(char.id);
+      };
+    });
+  });
+}
+
+               // 点击卡片进入编辑
           
           const formattedDesc = formatCharacterDesc(char.desc);
           
