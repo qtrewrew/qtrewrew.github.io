@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -643,6 +643,105 @@
         .volume-slider::-webkit-slider-thumb:hover {
             transform: scale(1.2);
         }
+        /* ====================== 大事件时间轴 ====================== */
+.events-page {
+  display: none;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+  z-index: 5;
+}
+.events-header {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #ffcc55;
+  font-size: 24px;
+  text-shadow: 0 0 10px rgba(255,204,85,0.5);
+}
+.add-event-form {
+  background: rgba(30,30,30,0.7);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 40px;
+  backdrop-filter: blur(10px);
+}
+.timeline {
+  position: relative;
+  padding-left: 40px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ffcc55;
+}
+.timeline-item {
+  position: relative;
+  background: rgba(30,30,30,0.6);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+}
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -38px;
+  top: 24px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffcc55;
+  border: 3px solid #121212;
+  z-index: 2;
+}
+.timeline-date {
+  font-size: 14px;
+  color: #ffcc55;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.timeline-title {
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.timeline-content {
+  color: #ccc;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+.timeline-img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 10px 0;
+  cursor: pointer;
+}
+.timeline-btns {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+.timeline-btns button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-edit { background: #3a6ea5; color: #fff; }
+.btn-del { background: #dc3545; color: #fff; }
+.no-events {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js"></script>
 </head>
@@ -652,7 +751,7 @@
 
 <div class="nav">
     <a onclick="showHome()" class="active" id="nav-home">首页</a>
-    <a onclick="hideAll()" id="nav-events">大事件</a>
+    <a onclick="showEvents()" id="nav-events">大事件</a>
     <a onclick="showCharacters()" id="nav-characters">人物</a>
     <a onclick="showPhotoWall()" id="nav-photos">图片墙</a>
     <a onclick="showWiki()" id="nav-wiki">百科</a>
@@ -704,7 +803,33 @@
 
     <div class="characters-grid" id="charactersGrid"></div>
 </div>
+<!-- ====================== 大事件时间轴 ====================== -->
+<div class="events-page" id="eventsPage">
+  <h2 class="events-header">📅 BlackForest 大事件记录</h2>
 
+  <div class="add-event-form">
+    <div class="form-group">
+      <label>事件日期</label>
+      <input type="text" id="eventDate" placeholder="例如：2016.8.6 创立族群">
+    </div>
+    <div class="form-group">
+      <label>事件标题</label>
+      <input type="text" id="eventTitle" placeholder="简短标题">
+    </div>
+    <div class="form-group">
+      <label>上传图片（可选）</label>
+      <input type="file" id="eventImg" accept="image/*" style="color:#fff;">
+    </div>
+    <div class="form-group">
+      <label>事件详情</label>
+      <textarea id="eventContent" rows="4" placeholder="描述这件事"></textarea>
+    </div>
+    <button class="add-char-btn" onclick="addEvent()">➕ 添加事件</button>
+    <button class="cancel-edit-btn" onclick="clearEventForm()">清空</button>
+  </div>
+
+  <div class="timeline" id="timeline"></div>
+</div>
 <!-- 新增：头像上传隐藏输入框 -->
 <input type="file" id="editAvatarInput" accept="image/*" style="display:none;">
 
@@ -773,8 +898,7 @@
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575906924-6.jpg",
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575909760-7.jpg",
         "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575912547-8.jpg",
-        "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575923126-9.jpg",
-        "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773676765114-10.jpg",
+        "https://pic-1314828337.cos.ap-guangzhou.myqcloud.com/upload/1773575923126-9.jpg"
     ];
 
     // 初始化COS实例
@@ -927,6 +1051,7 @@
         document.getElementById('wikiLink').style.display = 'none';
         document.getElementById('photoWall').style.display = 'none';
         document.getElementById('characterPage').style.display = 'none';
+        document.getElementById('eventsPage').style.display = 'none'; // 新增大事件页面隐藏
         resetNavActive();
         keepPlayerVisible();
     }
@@ -951,7 +1076,7 @@
         render();
     }
 
-    // ====================== 人物管理（核心修复） ======================
+    // ====================== 人物管理（核心） ======================
     const CHARACTER_FOLDER = "cat/";
     const CHARACTER_DATA_PATH = "data/characters.json";
 
@@ -1019,11 +1144,8 @@
         }).join('<br>');
     }
 
-    // 进入编辑模式（核心修复：增加编辑状态判断，避免重复触发）
+    // 进入编辑模式（核心修改）
     function enterEditMode(charId) {
-        // 如果已经在编辑当前人物，直接返回
-        if (editingCharId === charId) return;
-        
         editingCharId = charId;
         tempAvatarFile = null;
         
@@ -1038,14 +1160,14 @@
             // 获取人物信息区域
             const infoArea = card.querySelector('.character-info');
             
-            // 构建编辑表单HTML（修复：给输入框添加阻止冒泡）
+            // 构建编辑表单HTML
             const editHtml = `
-                <input type="text" class="edit-input" id="editName_${charId}" value="${char.name}" placeholder="人物姓名" onclick="event.stopPropagation()">
-                <button class="edit-avatar-btn" onclick="selectNewAvatar(${charId});event.stopPropagation();">更换头像</button>
-                <textarea class="edit-textarea" id="editDesc_${charId}" placeholder="人物简介" onclick="event.stopPropagation()">${char.desc}</textarea>
+                <input type="text" class="edit-input" id="editName_${charId}" value="${char.name}" placeholder="人物姓名">
+                <button class="edit-avatar-btn" onclick="selectNewAvatar(${charId})">更换头像</button>
+                <textarea class="edit-textarea" id="editDesc_${charId}" placeholder="人物简介">${char.desc}</textarea>
                 <div style="display:flex; justify-content:center; gap:8px; margin-top:10px;">
-                    <button class="save-edit-btn" onclick="saveInlineEdit(${charId});event.stopPropagation();">保存修改</button>
-                    <button class="cancel-edit-btn-sm" onclick="cancelEditMode(${charId});event.stopPropagation();">取消</button>
+                    <button class="save-edit-btn" onclick="saveInlineEdit(${charId})">保存修改</button>
+                    <button class="cancel-edit-btn-sm" onclick="cancelEditMode(${charId})">取消</button>
                     <button onclick="deleteCharacter(${charId});event.stopPropagation();" 
                             style="background:#c44545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">
                       删除
@@ -1071,7 +1193,7 @@
         fileInput.click();
     }
 
-    // 保存行内编辑
+    // 保存行内编辑（核心修改）
     function saveInlineEdit(charId) {
         const newName = document.getElementById(`editName_${charId}`).value.trim();
         const newDesc = document.getElementById(`editDesc_${charId}`).value.trim();
@@ -1134,7 +1256,7 @@
         renderCharacters(); // 重新渲染恢复原样
     }
 
-    // 渲染人物列表（核心修复：移除卡片的onclick属性，改用事件委托）
+    // 渲染人物列表（核心修改）
     function renderCharacters() {
       const grid = document.getElementById("charactersGrid");
       grid.innerHTML = "加载中...";
@@ -1151,7 +1273,7 @@
           const card = document.createElement("div");
           card.className = "character-card";
           card.setAttribute("data-char-id", char.id); // 标记人物ID
-          // 移除：card.setAttribute("onclick", "enterEditMode(" + char.id + ")");
+          card.setAttribute("onclick", "enterEditMode(" + char.id + ")"); // 点击卡片进入编辑
           
           const formattedDesc = formatCharacterDesc(char.desc);
           
@@ -1169,19 +1291,10 @@
           
           grid.appendChild(card);
         });
-        
-        // 事件委托：给整个grid添加点击事件，判断是否点击了卡片
-        grid.addEventListener('click', function(e) {
-            const card = e.target.closest('.character-card');
-            if (card && !e.target.closest('.edit-input, .edit-textarea, button')) {
-                const charId = parseInt(card.getAttribute('data-char-id'));
-                enterEditMode(charId);
-            }
-        });
       });
     }
 
-    // 添加新人物
+    // 添加新人物（保持原有逻辑）
     function addCharacter() {
       const name = document.getElementById("charName").value.trim();
       const desc = document.getElementById("charDesc").value.trim();
@@ -1212,7 +1325,7 @@
       });
     }
 
-    // 清空表单
+    // 清空表单（保持原有逻辑）
     function clearForm() {
         document.getElementById("charName").value = "";
         document.getElementById("charAvatar").value = "";
@@ -1224,7 +1337,7 @@
         addCharacter();
     }
 
-    // 删除人物
+    // 删除人物（保持原有逻辑）
     function deleteCharacter(characterId) {
       if (!confirm("确定删除该人物？删除后所有人都看不见！")) return;
       
@@ -1428,6 +1541,182 @@
     initPhotos();
     showHome();
     setInterval(calcDays, 86400000);
+    // ====================== 大事件 时间轴 ======================
+const EVENT_DATA_PATH = "data/events.json";
+const EVENT_IMG_FOLDER = "events/";
+let editingEventId = null;
+
+// 加载事件
+function loadEventsFromCOS(callback) {
+  cos.getObject({
+    Bucket: BUCKET,
+    Region: REGION,
+    Key: EVENT_DATA_PATH
+  }, function(err, data) {
+    if (err) callback([]);
+    else {
+      try { callback(JSON.parse(data.Body)); } 
+      catch (e) { callback([]); }
+    }
+  });
+}
+
+// 保存事件
+function saveEventsToCOS(events, callback) {
+  cos.putObject({
+    Bucket: BUCKET,
+    Region: REGION,
+    Key: EVENT_DATA_PATH,
+    Body: JSON.stringify(events, null, 2),
+    ContentType: "application/json"
+  }, callback);
+}
+
+// 上传事件图片
+function uploadEventImg(file, callback) {
+  const ext = file.name.split('.').pop();
+  const fn = EVENT_IMG_FOLDER + Date.now() + "-" + Math.random().toString(36).substr(2,6) + "." + ext;
+  cos.putObject({
+    Bucket: BUCKET,
+    Region: REGION,
+    Key: fn,
+    Body: file
+  }, function(err, data) {
+    if (err) { alert("上传失败："+err.Message); return; }
+    callback(`https://${BUCKET}.cos.${REGION}.myqcloud.com/${fn}`);
+  });
+}
+
+// 添加/编辑事件
+function addEvent() {
+  const date = document.getElementById('eventDate').value.trim();
+  const title = document.getElementById('eventTitle').value.trim();
+  const content = document.getElementById('eventContent').value.trim();
+  const file = document.getElementById('eventImg').files[0];
+
+  if (!date || !title || !content) {
+    alert("日期、标题、内容不能为空！");
+    return;
+  }
+
+  // 有图片先上传图片，再保存事件
+  if (file) {
+    uploadEventImg(file, (imgUrl) => {
+      saveOneEvent(date, title, content, imgUrl);
+    });
+  } else {
+    saveOneEvent(date, title, content, "");
+  }
+}
+
+// 保存单个事件（新增/编辑通用）
+function saveOneEvent(date, title, content, img) {
+  loadEventsFromCOS(function(events) {
+    // 编辑模式：更新现有事件
+    if (editingEventId) {
+      const index = events.findIndex(e => e.id === editingEventId);
+      if (index !== -1) {
+        events[index].date = date;
+        events[index].title = title;
+        events[index].content = content;
+        if (img) events[index].img = img; // 只有传了新图片才更新
+      }
+    } else {
+      // 新增模式：插入到最前面（最新事件在顶部）
+      events.unshift({
+        id: Date.now(),
+        date: date,
+        title: title,
+        content: content,
+        img: img
+      });
+    }
+
+    // 保存到COS
+    saveEventsToCOS(events, function(err) {
+      if (err) alert("保存失败："+err.Message);
+      else {
+        alert(editingEventId ? "事件修改成功！" : "事件发布成功！");
+        clearEventForm();
+        renderEvents();
+      }
+    });
+  });
+}
+
+// 清空事件表单
+function clearEventForm() {
+  document.getElementById('eventDate').value = '';
+  document.getElementById('eventTitle').value = '';
+  document.getElementById('eventContent').value = '';
+  document.getElementById('eventImg').value = '';
+  editingEventId = null;
+}
+
+// 渲染时间轴
+function renderEvents() {
+  const timeline = document.getElementById('timeline');
+  loadEventsFromCOS(function(events) {
+    if (!events || events.length === 0) {
+      timeline.innerHTML = '<div class="no-events">暂无大事件，添加第一个里程碑吧～</div>';
+      return;
+    }
+    timeline.innerHTML = '';
+    // 遍历事件生成时间轴
+    events.forEach(ev => {
+      const item = document.createElement('div');
+      item.className = 'timeline-item';
+      item.innerHTML = `
+        <div class="timeline-date">${ev.date}</div>
+        <div class="timeline-title">${ev.title}</div>
+        ${ev.img ? `<img src="${ev.img}" class="timeline-img" onclick="openPreview('${ev.img}')">` : ''}
+        <div class="timeline-content">${ev.content}</div>
+        <div class="timeline-btns">
+          <button class="btn-edit" onclick="editEvent(${ev.id})">编辑</button>
+          <button class="btn-del" onclick="deleteEvent(${ev.id})">删除</button>
+        </div>
+      `;
+      timeline.appendChild(item);
+    });
+  });
+}
+
+// 编辑事件
+function editEvent(id) {
+  loadEventsFromCOS(function(events) {
+    const ev = events.find(e => e.id === id);
+    if (!ev) return;
+    // 填充表单
+    document.getElementById('eventDate').value = ev.date;
+    document.getElementById('eventTitle').value = ev.title;
+    document.getElementById('eventContent').value = ev.content;
+    editingEventId = id;
+    alert("已加载事件到表单，修改后点击【添加事件】即可更新！");
+  });
+}
+
+// 删除事件
+function deleteEvent(id) {
+  if (!confirm("确定删除此事件？删除后无法恢复！")) return;
+  loadEventsFromCOS(function(events) {
+    const filtered = events.filter(e => e.id !== id);
+    saveEventsToCOS(filtered, function(err) {
+      if (err) alert("删除失败：" + err.Message);
+      else {
+        alert("删除成功！");
+        renderEvents();
+      }
+    });
+  });
+}
+
+// 显示大事件页面
+function showEvents() {
+  hideAll();
+  document.getElementById('eventsPage').style.display = 'block';
+  document.getElementById('nav-events').classList.add('active');
+  renderEvents();
+}
 </script>
 </body>
 </html>
