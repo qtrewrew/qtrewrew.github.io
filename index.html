@@ -1273,7 +1273,23 @@
           const card = document.createElement("div");
           card.className = "character-card";
           card.setAttribute("data-char-id", char.id); // 标记人物ID
-          card.setAttribute("onclick", "enterEditMode(" + char.id + "); event.stopPropagation();"); // 点击卡片进入编辑
+         // 只给“名字”绑定点击，不绑定整个卡片
+
+         const nameEl = card.querySelector('.character-name');
+
+         if (nameEl) {
+ 
+            nameEl.style.cursor = 'pointer';
+  
+            nameEl.onclick = (e) => {
+    
+                e.stopPropagation();
+    
+                enterEditMode(char.id);
+ 
+            };
+
+        }        // 点击卡片进入编辑
           
           const formattedDesc = formatCharacterDesc(char.desc);
           
